@@ -4,7 +4,7 @@ PWA para editar fotos y ponerles un marco estilo instantánea. Lee los metadatos
 
 ## Funciones
 
-- **Filtros**: 108 filtros en un carrete deslizable estilo película, con miniaturas sobre tu propia foto e intensidad ajustable: 54 inspirados en cámaras y películas (instantáneas, compactas, desechables, de juguete, telemétricas, medio formato, cine, diapositiva, negativo) y 54 creativos (incluidos 12 en blanco y negro).
+- **Filtros**: 108 filtros en un carrete deslizable, con miniaturas sobre tu propia foto e intensidad ajustable: 54 inspirados en cámaras y películas (instantáneas, compactas, desechables, de juguete, telemétricas, medio formato, cine, diapositiva, negativo) y 54 creativos (incluidos 12 en blanco y negro).
 - **Textos y stickers**: capas que se mueven con un dedo y se agrandan o giran con dos; varios textos con letra, color y fondo, emojis o imágenes propias (PNG, JPG, WebP o el primer cuadro de un GIF).
 - **Editar**: histograma RGB, luz (exposición, contraste, altas luces, sombras, blancos, negros), color (temperatura, matiz, intensidad, saturación), mezcla de color HSL por 8 tonos, efectos (claridad, desvanecido, viñeta, grano), nitidez, virado de sombras y luces, y botón Auto.
 - **Recortar**: recorte libre con esquinas y bordes que se arrastran con el dedo, o con proporción fija (Original, 1:1, 4:5, 3:4, 2:3, 9:16, 3:2, 16:9) que se mantiene al arrastrar; mover y pellizcar el recuadro, girar, espejo y enderezar. El recorte se confirma con **Aplicar** o se descarta con **Cancelar**.

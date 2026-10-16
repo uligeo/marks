@@ -1,22 +1,15 @@
 /* Filters */
 
 .filter-reel {
-  --film: #15171b;
-  --hole: rgba(255, 255, 255, 0.85);
   display: flex;
-  gap: 6px;
+  gap: 10px;
   margin: 0 -16px;
-  padding: 18px 16px;
+  padding: 4px 16px 6px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scroll-padding: 0 16px;
   scrollbar-width: none;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 6px, var(--hole) 6px 14px, transparent 14px 20px) top 5px left / 100% 7px no-repeat,
-    repeating-linear-gradient(90deg, transparent 0 6px, var(--hole) 6px 14px, transparent 14px 20px) bottom 5px left / 100% 7px no-repeat,
-    var(--film);
-  background-attachment: local;
 }
 
 .filter-reel::-webkit-scrollbar {
@@ -35,7 +28,7 @@
   border: 0;
   background: none;
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--ink-soft);
 }
 
 .filter-option span {
@@ -48,19 +41,19 @@
 .filter-thumb {
   width: 84px;
   aspect-ratio: 1;
-  border-radius: 3px;
+  border-radius: var(--radius-s);
   outline: 2px solid transparent;
   outline-offset: 2px;
-  background: #2a2d33;
+  background: var(--line);
 }
 
 .filter-option[aria-pressed='true'] {
-  color: #ffffff;
+  color: var(--ink);
   font-weight: 600;
 }
 
 .filter-option[aria-pressed='true'] .filter-thumb {
-  outline-color: #ffffff;
+  outline-color: var(--accent);
 }
 
 /* Layers and stickers */
