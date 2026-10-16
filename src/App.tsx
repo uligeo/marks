@@ -7,6 +7,7 @@ import { CollageEditor } from './components/collage/CollageEditor'
 import { EmptyState } from './components/EmptyState'
 import { PhotoEditor } from './components/PhotoEditor'
 import { TopBar } from './components/TopBar'
+import { UpdatePrompt } from './components/UpdatePrompt'
 
 type Mode = { kind: 'home' } | { kind: 'photo'; photo: LoadedPhoto; key: number } | { kind: 'collage'; photos: LoadedPhoto[] }
 
@@ -88,6 +89,8 @@ export default function App() {
         <PhotoEditor key={mode.key} photo={mode.photo} fontsReady={fontsReady} onHome={goHome} onOpenAnother={() => pick(false)} />
       )}
       {mode.kind === 'collage' && <CollageEditor photos={mode.photos} fontsReady={fontsReady} onHome={goHome} />}
+
+      <UpdatePrompt />
 
       <input
         ref={fileInput}

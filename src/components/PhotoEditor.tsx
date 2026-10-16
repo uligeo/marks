@@ -89,6 +89,14 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother }: PhotoE
     [edit.transform, update],
   )
 
+  const zoom = useCallback(
+    (ratio: number) => {
+      const t = edit.transform
+      update({ transform: { ...t, zoom: Math.max(1, Math.min(3, t.zoom * ratio)) } })
+    },
+    [edit.transform, update],
+  )
+
   const toggleCompare = useCallback((e: KeyboardEvent) => {
     if (e.key === '\\') setCompare((c) => !c)
   }, [])
@@ -119,7 +127,7 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother }: PhotoE
       </TopBar>
 
       <main className="stage">
-        <Stage input={renderInput} fontsReady={fontsReady} onHistogram={setHistogram} onPan={pan} onTap={() => setChrome((c) => !c)} />
+        <Stage input={renderInput} fontsReady={fontsReady} onHistogram={setHistogram} onPan={pan} onZoom={zoom} onTap={() => setChrome((c) => !c)} />
         {compare && <span className="badge">Original</span>}
       </main>
 

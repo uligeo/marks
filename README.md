@@ -15,7 +15,8 @@ PWA para editar fotos y ponerles un marco estilo instantánea. Lee los metadatos
 - **Tono claro u oscuro**: claro por defecto; la elección se recuerda en el dispositivo.
 - Deshacer/rehacer (Ctrl/Cmd+Z, Ctrl/Cmd+Mayús+Z) y comparar con el original (`\`).
 - **Exportación a máxima calidad**: por defecto a la resolución original completa del sensor, o a 8K, 6K, 4K y Full HD; JPG al 100 % o PNG sin pérdida. Si el navegador no admite el tamaño pedido (por ejemplo, Safari en iPhone limita el lienzo a unos 16,7 MP), se reduce al máximo posible y se avisa. Conserva el EXIF original en JPG y, opcionalmente, el GPS.
-- Instalable y funciona sin conexión.
+- Instalable y funciona sin conexión. Se comporta como app: el pellizco con dos dedos hace zoom del encuadre de la foto (no de la página), sin zoom por doble toque ni rebote al deslizar.
+- **Actualizaciones**: la app revisa cada hora si hay versión nueva (y cada vez que se abre). Cuando la hay, muestra el aviso "Hay una versión nueva" con el botón **Actualizar**, para no recargar en medio de una edición.
 
 ## Requisitos
 
@@ -39,7 +40,14 @@ Para instalarla en el móvil debe servirse por HTTPS. En la red local: `npm run 
 
 ## Variables de entorno
 
-No requiere ninguna.
+| Variable | Uso |
+| --- | --- |
+| `BASE_PATH` | Ruta base de publicación. Por defecto `/`; el despliegue a GitHub Pages usa `/marks/`. |
+
+## Despliegue
+
+Cada push a `main` compila y publica la app en GitHub Pages mediante `.github/workflows/deploy.yml`:
+https://uligeo.github.io/marks/
 
 ## Notas
 

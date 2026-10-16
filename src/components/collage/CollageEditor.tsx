@@ -82,6 +82,15 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
     [history, state],
   )
 
+  const zoomCell = useCallback(
+    (index: number, ratio: number) => {
+      const c = state.cells[index]
+      const next = { ...c, zoom: Math.max(1, Math.min(3, c.zoom * ratio)) }
+      history.set({ ...state, cells: state.cells.map((x, i) => (i === index ? next : x)) })
+    },
+    [history, state],
+  )
+
   const selectCell = (index: number | null) => {
     setSelected(index)
     setChrome(true)
@@ -150,7 +159,7 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
       <TopBar onHome={onHome} history={history} onExport={() => setExporting(true)} />
 
       <main className="stage">
-        <CollageStage state={state} selected={selected} fontsReady={fontsReady} onSelect={selectCell} onPanCell={panCell}
+        <CollageStage state={state} selected={selected} fontsReady={fontsReady} onSelect={selectCell} onPanCell={panCell} onZoomCell={zoomCell}
           onTapBackground={tapBackground} />
         {error && (
           <button type="button" className="toast" role="alert" onClick={() => setError(null)}>
