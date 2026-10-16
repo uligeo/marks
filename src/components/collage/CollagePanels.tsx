@@ -1,7 +1,9 @@
-import type { BackgroundKind, CaptionFont, CollageSettings } from '../../types'
+import type { BackgroundKind, CollageSettings } from '../../types'
 import { MAX_PHOTOS, layoutRects, layoutsFor } from '../../lib/collageLayouts'
 import { COLLAGE_ASPECTS, GRADIENTS } from '../../lib/collageRender'
 import { FRAME_COLORS } from '../../lib/frame'
+import { FONTS } from '../../lib/fonts'
+import { FontPicker } from '../FontPicker'
 import { Slider } from '../Slider'
 
 interface PanelProps {
@@ -114,12 +116,6 @@ export function BackgroundPanel({ value, onChange, count }: PanelProps & { count
   )
 }
 
-const FONTS: { id: CaptionFont; label: string }[] = [
-  { id: 'hand', label: 'A mano' },
-  { id: 'typewriter', label: 'Máquina' },
-  { id: 'sans', label: 'Limpia' },
-]
-
 const relative = (max: number) => (v: number) => `${Math.round((v / max) * 100)}`
 
 export function StylePanel({ value, onChange }: PanelProps) {
@@ -136,13 +132,7 @@ export function StylePanel({ value, onChange }: PanelProps) {
         <input type="text" className="text-input" maxLength={60} placeholder="Un título para el collage"
           value={value.caption} onChange={(e) => onChange({ caption: e.target.value })} />
       </label>
-      <div className="segmented" role="group" aria-label="Letra">
-        {FONTS.map((f) => (
-          <button key={f.id} type="button" className={`font-${f.id}`} aria-pressed={value.font === f.id} onClick={() => onChange({ font: f.id })}>
-            {f.label}
-          </button>
-        ))}
-      </div>
+      <FontPicker label="Letra" fonts={FONTS} value={value.font} onChange={(font) => onChange({ font })} />
     </div>
   )
 }

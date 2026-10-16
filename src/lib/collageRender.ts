@@ -2,9 +2,11 @@ import type { CollageCell, CollageSettings, CollageState } from '../types'
 import { isNeutral } from './adjust'
 import { layoutRects, resolveLayout, type Rect } from './collageLayouts'
 import { drawBlurBackground } from './frame'
-import { FONT_FAMILY, drawStack, inkFor } from './frameText'
+import { getFont } from './fonts'
+import { drawStack, inkFor } from './frameText'
 import { applyAdjustments } from './pipeline'
 import { blurredCopy } from './render'
+import { JPEG_QUALITY, canvasToBlob, fitScale, resolutionScale, type ExportResult, type QualityId, type ResolutionId, type Size } from './quality'
 
 export const GRADIENTS: [string, string][] = [
   ['#f6d365', '#fda085'],
@@ -27,7 +29,6 @@ export const COLLAGE_ASPECTS: { label: string; value: number }[] = [
 ]
 
 const PREVIEW_LONG_SIDE = 1400
-const EXPORT_LONG_SIDE = 3600
 
 export interface CollageGeometry {
   w: number
@@ -138,8 +139,8 @@ function drawCollage(out: HTMLCanvasElement, state: CollageState, longSide: numb
   const s = state.settings
   if (geo.textBox) {
     const size = geo.textBox.h * 0.5
-    const weight = s.font === 'sans' ? 600 : 700
-    drawStack(ctx, [{ text: s.caption.trim(), size, weight, family: FONT_FAMILY[s.font], alpha: 1 }], geo.textBox, textColor(s))
+    const font = getFont(s.font)
+    drawStack(ctx, [{ text: s.caption.trim(), size, weight: font.bold, family: font.family, alpha: 1 }], geo.textBox, textColor(s))
   }
   return geo
 }
@@ -159,10 +160,38 @@ export function renderCollagePreview(out: HTMLCanvasElement, state: CollageState
   return geo
 }
 
-export async function exportCollage(state: CollageState, format: 'image/jpeg' | 'image/png'): Promise<Blob> {
+const REFERENCE_LONG_SIDE = 1000
+
+/** Long side at which the most detailed photo is drawn at its native resolution. */
+function naturalLongSide(state: CollageState): number {
+  const geo = collageGeometry(state, REFERENCE_LONG_SIDE)
+  const needed = state.cells.map((cell, i) => {
+    const r = geo.rects[i]
+    if (!r) return 0
+    const src = cell.photo.full
+    const cover = Math.max(r.w / src.width, r.h / src.height) * cell.zoom
+    return REFERENCE_LONG_SIDE / cover
+  })
+  return Math.max(REFERENCE_LONG_SIDE, ...needed)
+}
+
+export function naturalCollageSize(state: CollageState): Size {
+  const { w, h } = collageGeometry(state, naturalLongSide(state))
+  return { w, h }
+}
+
+export async function exportCollage(
+  state: CollageState,
+  opts: { format: 'image/jpeg' | 'image/png'; resolution: ResolutionId; quality: QualityId },
+): Promise<ExportResult> {
+  const long = naturalLongSide(state)
+  const natural = naturalCollageSize(state)
+  const wanted = resolutionScale(natural, opts.resolution)
+  const fit = fitScale(natural.w * wanted, natural.h * wanted)
   const out = document.createElement('canvas')
-  drawCollage(out, state, EXPORT_LONG_SIDE, true)
-  return new Promise<Blob>((resolve, reject) =>
-    out.toBlob((b) => (b ? resolve(b) : reject(new Error('No se pudo generar la imagen'))), format, 0.93),
-  )
+  drawCollage(out, state, long * wanted * fit, true)
+  const size = { w: out.width, h: out.height }
+  const blob = await canvasToBlob(out, opts.format, JPEG_QUALITY[opts.quality])
+  out.width = 0
+  return { blob, size, limited: fit < 1 }
 }

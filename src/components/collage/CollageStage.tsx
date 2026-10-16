@@ -9,9 +9,11 @@ interface CollageStageProps {
   onSelect: (index: number | null) => void
   /** Pan deltas in the cell's -1..1 pan space. */
   onPanCell: (index: number, dx: number, dy: number) => void
+  /** A tap on the background, outside every photo. */
+  onTapBackground: () => void
 }
 
-export function CollageStage({ state, selected, fontsReady, onSelect, onPanCell }: CollageStageProps) {
+export function CollageStage({ state, selected, fontsReady, onSelect, onPanCell, onTapBackground }: CollageStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const geometry = useRef<CollageGeometry | null>(null)
   const drag = useRef<{ index: number; x: number; y: number } | null>(null)
@@ -32,8 +34,11 @@ export function CollageStage({ state, selected, fontsReady, onSelect, onPanCell 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const p = toCanvas(e)
     const index = geometry.current?.rects.findIndex((r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) ?? -1
-    onSelect(index >= 0 ? index : null)
-    if (index < 0) return
+    if (index < 0) {
+      onTapBackground()
+      return
+    }
+    onSelect(index)
     drag.current = { index, ...p }
     e.currentTarget.setPointerCapture(e.pointerId)
   }

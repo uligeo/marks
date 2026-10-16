@@ -1,5 +1,5 @@
 import type { FrameSettings } from '../types'
-import { FONT_FAMILY, drawStack, drawStrip, inkFor, stackLines } from './frameText'
+import { drawStack, drawStrip, inkFor, stackLines } from './frameText'
 
 export type FrameKind = 'polaroid' | 'strip' | 'blur' | 'overlay'
 
@@ -35,16 +35,6 @@ export const CANVAS_ASPECTS: { label: string; value: number | null }[] = [
   { label: '9:16', value: 9 / 16 },
   { label: '16:9', value: 16 / 9 },
 ]
-
-export async function loadCanvasFonts(): Promise<void> {
-  await Promise.allSettled([
-    document.fonts.load('700 40px "Caveat"'),
-    document.fonts.load('400 40px "Courier Prime"'),
-    document.fonts.load('700 40px "Courier Prime"'),
-    document.fonts.load('400 40px "Instrument Sans"'),
-    document.fonts.load('600 40px "Instrument Sans"'),
-  ])
-}
 
 export function getFrameStyle(id: string): FrameStyle {
   return FRAME_STYLES.find((s) => s.id === id) ?? FRAME_STYLES[0]
@@ -198,8 +188,7 @@ export function drawFrame(out: HTMLCanvasElement, photo: HTMLCanvasElement, fram
     drawStack(ctx, lines, { x: 0, y: L.h - boxH - pw * 0.02, w: L.w, h: boxH }, '#ffffff')
     ctx.shadowColor = 'transparent'
   } else if (bottomH > 0) {
-    const metaFont = frame.font === 'hand' ? FONT_FAMILY.typewriter : undefined
-    const meta = stackLines(frame, Math.min(bottomH * 0.36, pw * 0.12), Math.min(bottomH * 0.13, pw * 0.03), metaFont)
+    const meta = stackLines(frame, Math.min(bottomH * 0.36, pw * 0.12), Math.min(bottomH * 0.13, pw * 0.03))
     drawStack(ctx, meta, textBox, ink)
   }
 }

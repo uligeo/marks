@@ -1,0 +1,57 @@
+/* Collage */
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 6px;
+}
+
+.layout-option {
+  display: grid;
+  place-items: center;
+  min-height: 64px;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-m);
+  background: none;
+}
+
+.layout-option[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.layout-bg {
+  fill: var(--line);
+}
+
+.layout-cell {
+  fill: var(--ink-soft);
+}
+
+.layout-option[aria-pressed='true'] .layout-cell {
+  fill: var(--accent);
+}
+
+.cell-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.tool-danger {
+  color: var(--danger);
+}
+
+.toast {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--ink);
+  color: var(--lightbox);
+  font-size: 0.9rem;
+}

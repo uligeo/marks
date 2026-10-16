@@ -3,9 +3,16 @@ import type { Adjustments, ExifSummary, FrameSettings, LoadedPhoto, Transform } 
 import { applyAdjustments, computeHistogram, type Histogram } from './pipeline'
 import { drawFrame, frameLayout } from './frame'
 import { dataUrlToBlob, readAsDataUrl } from './image'
-
-/** Safe canvas area across browsers (iOS Safari caps near 16.7 MP). */
-const MAX_EXPORT_AREA = 16_000_000
+import {
+  JPEG_QUALITY,
+  canvasToBlob,
+  fitScale,
+  resolutionScale,
+  type ExportResult,
+  type QualityId,
+  type ResolutionId,
+  type Size,
+} from './quality'
 
 interface CropRect {
   x: number
@@ -108,10 +115,10 @@ export function renderPreview(out: HTMLCanvasElement, input: RenderInput): Histo
   return computeHistogram(data)
 }
 
-function exportScale(input: RenderInput): number {
+/** Output size at the photo's full native resolution, frame included. */
+export function naturalExportSize(input: RenderInput): Size {
   const c = cropRect(input.photo.full, input.transform)
-  const { w, h } = frameLayout(c.w, c.h, input.frame)
-  return Math.min(1, Math.sqrt(MAX_EXPORT_AREA / (w * h)))
+  return frameLayout(c.w, c.h, input.frame)
 }
 
 function withOriginalExif(originalDataUrl: string, outDataUrl: string, keepGps: boolean): string {
@@ -125,26 +132,31 @@ function withOriginalExif(originalDataUrl: string, outDataUrl: string, keepGps: 
 
 export interface ExportOptions {
   format: 'image/jpeg' | 'image/png'
+  resolution: ResolutionId
+  quality: QualityId
   keepExif: boolean
   keepGps: boolean
 }
 
-export async function exportImage(input: RenderInput, opts: ExportOptions): Promise<Blob> {
-  const scale = exportScale(input)
-  const { canvas } = renderPhoto(input.photo.full, input.transform, input.adjustments, scale)
+export async function exportImage(input: RenderInput, opts: ExportOptions): Promise<ExportResult> {
+  const natural = naturalExportSize(input)
+  const wanted = resolutionScale(natural, opts.resolution)
+  const fit = fitScale(natural.w * wanted, natural.h * wanted)
+  const { canvas } = renderPhoto(input.photo.full, input.transform, input.adjustments, wanted * fit)
   const out = document.createElement('canvas')
   drawFrame(out, canvas, input.frame)
+  canvas.width = 0
 
-  const blob = await new Promise<Blob>((resolve, reject) =>
-    out.toBlob((b) => (b ? resolve(b) : reject(new Error('No se pudo generar la imagen'))), opts.format, 0.93),
-  )
+  const result = { size: { w: out.width, h: out.height }, limited: fit < 1 }
+  const blob = await canvasToBlob(out, opts.format, JPEG_QUALITY[opts.quality])
+  out.width = 0
   const isJpegSource = /jpe?g/i.test(input.photo.file.type)
-  if (opts.format !== 'image/jpeg' || !opts.keepExif || !isJpegSource) return blob
+  if (opts.format !== 'image/jpeg' || !opts.keepExif || !isJpegSource) return { blob, ...result }
   try {
     const [orig, rendered] = await Promise.all([readAsDataUrl(input.photo.file), readAsDataUrl(blob)])
-    return dataUrlToBlob(withOriginalExif(orig, rendered, opts.keepGps))
+    return { blob: dataUrlToBlob(withOriginalExif(orig, rendered, opts.keepGps)), ...result }
   } catch {
-    return blob
+    return { blob, ...result }
   }
 }
 

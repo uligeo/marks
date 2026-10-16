@@ -10,8 +10,11 @@ PWA para editar fotos y ponerles un marco estilo instantánea. Lee los metadatos
 - **Datos impresos editables**: cámara, objetivo, exposición y fecha se llenan desde el EXIF y se pueden corregir o dejar vacíos.
 - **Datos**: EXIF completo, con ubicación GPS y enlace a OpenStreetMap.
 - **Collage** de hasta 9 fotos: distribuciones en filas y columnas según el número de fotos, proporciones 1:1, 4:5, 3:4, 9:16, 3:2 y 16:9, fondo de color, degradado o foto desenfocada, espaciado, margen, esquinas redondeadas y texto. Cada foto se encuadra arrastrándola, tiene zoom y ajustes propios, y se puede mover, reemplazar o quitar.
+- **Interfaz tipo Lightroom**: barra de herramientas con iconos (abajo en el móvil, a la derecha en escritorio), paneles que se abren y se ocultan al tocar la herramienta, categorías Estilos, Luz, Color, Mezcla, Efectos y Detalle, y modo inmersivo al tocar la foto.
+- **10 tipos de letra incluidos en la app** (funcionan sin conexión): Limpia, A mano, Caligrafía, Marcador, Máquina, Antigua, Técnica, Clásica, Elegante y Titular, con letra independiente para los datos.
+- **Tono claro u oscuro**: claro por defecto; la elección se recuerda en el dispositivo.
 - Deshacer/rehacer (Ctrl/Cmd+Z, Ctrl/Cmd+Mayús+Z) y comparar con el original (`\`).
-- Exportar en JPG o PNG a resolución completa (máx. 16 MP), conservando el EXIF original en JPG y, opcionalmente, el GPS.
+- **Exportación a máxima calidad**: por defecto a la resolución original completa del sensor, o a 8K, 6K, 4K y Full HD; JPG al 100 % o PNG sin pérdida. Si el navegador no admite el tamaño pedido (por ejemplo, Safari en iPhone limita el lienzo a unos 16,7 MP), se reduce al máximo posible y se avisa. Conserva el EXIF original en JPG y, opcionalmente, el GPS.
 - Instalable y funciona sin conexión.
 
 ## Requisitos

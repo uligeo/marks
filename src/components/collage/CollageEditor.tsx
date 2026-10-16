@@ -2,24 +2,27 @@ import { useCallback, useRef, useState } from 'react'
 import type { CollageCell, CollageSettings, CollageState, LoadedPhoto } from '../../types'
 import { neutralAdjustments } from '../../lib/adjust'
 import { MAX_PHOTOS } from '../../lib/collageLayouts'
-import { exportCollage } from '../../lib/collageRender'
+import { exportCollage, naturalCollageSize } from '../../lib/collageRender'
+import type { ExportOptions } from '../../lib/render'
 import { loadPhoto } from '../../lib/image'
 import { saveBlob } from '../../lib/save'
 import { useHistory } from '../../hooks/useHistory'
 import { useUndoKeys } from '../../hooks/useUndoKeys'
 import { ExportSheet } from '../ExportSheet'
+import { ToolRail, type Tool } from '../ToolRail'
 import { TopBar } from '../TopBar'
+import { IconFill, IconImage, IconLayout, IconStyle } from '../icons'
 import { CellPanel } from './CellPanel'
 import { BackgroundPanel, LayoutPanel, StylePanel } from './CollagePanels'
 import { CollageStage } from './CollageStage'
 
 type Tab = 'layout' | 'background' | 'style' | 'photo'
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'layout', label: 'Diseño' },
-  { id: 'background', label: 'Fondo' },
-  { id: 'style', label: 'Estilo' },
-  { id: 'photo', label: 'Foto' },
+const TOOLS: Tool<Tab>[] = [
+  { id: 'layout', label: 'Diseño', icon: <IconLayout /> },
+  { id: 'background', label: 'Fondo', icon: <IconFill /> },
+  { id: 'style', label: 'Estilo', icon: <IconStyle /> },
+  { id: 'photo', label: 'Foto', icon: <IconImage /> },
 ]
 
 let nextId = 0
@@ -51,7 +54,8 @@ interface CollageEditorProps {
 }
 
 export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps) {
-  const [tab, setTab] = useState<Tab>('layout')
+  const [tool, setTool] = useState<Tab | null>('layout')
+  const [chrome, setChrome] = useState(true)
   const [selected, setSelected] = useState<number | null>(null)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,7 +84,13 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
 
   const selectCell = (index: number | null) => {
     setSelected(index)
-    if (index !== null) setTab('photo')
+    setChrome(true)
+    if (index !== null) setTool('photo')
+  }
+
+  const tapBackground = () => {
+    if (selected !== null) setSelected(null)
+    else setChrome((c) => !c)
   }
 
   const pick = (replaceIndex: number | null) => {
@@ -127,19 +137,21 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
     setCells(cells.map((c) => ({ ...c, adjustments: adj })))
   }
 
-  const runExport = async (opts: { format: 'image/jpeg' | 'image/png' }, mode: 'download' | 'share') => {
-    const blob = await exportCollage(state, opts.format)
-    await saveBlob(blob, `collage.${opts.format === 'image/png' ? 'png' : 'jpg'}`, mode)
+  const runExport = async (opts: ExportOptions, mode: 'download' | 'share') => {
+    const result = await exportCollage(state, opts)
+    await saveBlob(result.blob, `collage.${opts.format === 'image/png' ? 'png' : 'jpg'}`, mode)
+    return result
   }
 
   const cell = selected !== null ? cells[selected] ?? null : null
 
   return (
-    <>
+    <div className="editor" data-chrome={chrome ? 'visible' : 'hidden'}>
       <TopBar onHome={onHome} history={history} onExport={() => setExporting(true)} />
 
       <main className="stage">
-        <CollageStage state={state} selected={selected} fontsReady={fontsReady} onSelect={selectCell} onPanCell={panCell} />
+        <CollageStage state={state} selected={selected} fontsReady={fontsReady} onSelect={selectCell} onPanCell={panCell}
+          onTapBackground={tapBackground} />
         {error && (
           <button type="button" className="toast" role="alert" onClick={() => setError(null)}>
             {error}
@@ -147,32 +159,29 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
         )}
       </main>
 
-      <aside className="panel">
-        <nav className="tabs" role="tablist" aria-label="Herramientas del collage">
-          {TABS.map((t) => (
-            <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <div className="panel-scroll" role="tabpanel">
-          {tab === 'layout' && <LayoutPanel value={settings} onChange={setSettings} count={cells.length} onAdd={() => pick(null)} />}
-          {tab === 'background' && <BackgroundPanel value={settings} onChange={setSettings} count={cells.length} />}
-          {tab === 'style' && <StylePanel value={settings} onChange={setSettings} />}
-          {tab === 'photo' && (
-            <CellPanel
-              cell={cell}
-              index={selected ?? 0}
-              count={cells.length}
-              onChange={(c) => selected !== null && updateCell(selected, c)}
-              onMove={move}
-              onReplace={() => pick(selected)}
-              onRemove={remove}
-              onApplyToAll={applyToAll}
-            />
-          )}
-        </div>
-      </aside>
+      {tool && (
+        <aside className="panel" key={tool}>
+          <div className="panel-scroll">
+            {tool === 'layout' && <LayoutPanel value={settings} onChange={setSettings} count={cells.length} onAdd={() => pick(null)} />}
+            {tool === 'background' && <BackgroundPanel value={settings} onChange={setSettings} count={cells.length} />}
+            {tool === 'style' && <StylePanel value={settings} onChange={setSettings} />}
+            {tool === 'photo' && (
+              <CellPanel
+                cell={cell}
+                index={selected ?? 0}
+                count={cells.length}
+                onChange={(c) => selected !== null && updateCell(selected, c)}
+                onMove={move}
+                onReplace={() => pick(selected)}
+                onRemove={remove}
+                onApplyToAll={applyToAll}
+              />
+            )}
+          </div>
+        </aside>
+      )}
+
+      <ToolRail tools={TOOLS} active={tool} onSelect={setTool} label="Herramientas del collage" />
 
       <input
         ref={fileInput}
@@ -186,8 +195,8 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
       />
 
       {exporting && (
-        <ExportSheet exifOptions={false} canKeepExif={false} hasGps={false} onExport={runExport} onClose={() => setExporting(false)} />
+        <ExportSheet naturalSize={naturalCollageSize(state)} exifOptions={false} canKeepExif={false} hasGps={false} onExport={runExport} onClose={() => setExporting(false)} />
       )}
-    </>
+    </div>
   )
 }

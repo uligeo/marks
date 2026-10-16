@@ -1,0 +1,267 @@
+/* Layout */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  background: var(--lightbox);
+  color: var(--ink);
+}
+
+.app[data-drag='true'] .stage {
+  outline: 3px dashed var(--accent);
+  outline-offset: -12px;
+}
+
+.app > .stage {
+  flex: 1;
+  min-height: 0;
+}
+
+.editor {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-areas: 'top' 'stage' 'panel' 'rail';
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.editor > .topbar {
+  grid-area: top;
+}
+.editor > .stage {
+  grid-area: stage;
+}
+.editor > .panel {
+  grid-area: panel;
+}
+.editor > .rail {
+  grid-area: rail;
+}
+
+.editor[data-chrome='hidden'] > .topbar,
+.editor[data-chrome='hidden'] > .panel,
+.editor[data-chrome='hidden'] > .rail {
+  display: none;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  min-height: 56px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.preview {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  touch-action: none;
+  cursor: grab;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.25),
+    0 14px 36px rgba(0, 0, 0, 0.3);
+}
+
+.preview:active {
+  cursor: grabbing;
+}
+
+.badge {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--lightbox);
+  font-size: 0.85rem;
+}
+
+/* Tool panel: a sheet above the rail on phones, a column on desktop. */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 40dvh;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  animation: panel-in 0.18s ease-out;
+}
+
+@keyframes panel-in {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+}
+
+.panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 16px 16px;
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 16px;
+}
+
+.rail {
+  display: flex;
+  justify-content: space-around;
+  gap: 4px;
+  padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+}
+
+.rail-btn {
+  flex: 1;
+  max-width: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 56px;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+}
+
+.rail-btn[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Category strip inside the edit panel. */
+
+.subtools {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 2px;
+  margin: 0 -16px;
+  padding: 6px 8px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.subtool {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.subtool[aria-selected='true'] {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  color: var(--ink);
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.preset-grid .chip {
+  min-height: 44px;
+}
+
+@media (min-width: 900px) {
+  .editor {
+    grid-template-areas:
+      'top top top'
+      'stage panel rail';
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .stage {
+    padding: 32px;
+  }
+
+  .panel {
+    width: 340px;
+    max-height: none;
+    min-height: 0;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    animation-name: panel-in-side;
+  }
+
+  @keyframes panel-in-side {
+    from {
+      transform: translateX(16px);
+      opacity: 0;
+    }
+  }
+
+  .rail {
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 84px;
+    padding: 8px 6px;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+
+  .rail-btn {
+    flex: none;
+    min-height: 64px;
+  }
+}
+
+@media (max-width: 899px) {
+  .hide-mobile {
+    display: none;
+  }
+}

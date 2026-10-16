@@ -1,12 +1,5 @@
-import type { CaptionFont, FrameSettings } from '../types'
-
-export const FONT_FAMILY: Record<CaptionFont, string> = {
-  hand: '"Caveat", cursive',
-  typewriter: '"Courier Prime", monospace',
-  sans: '"Instrument Sans", sans-serif',
-}
-
-const CAPTION_WEIGHT: Record<CaptionFont, number> = { hand: 700, typewriter: 700, sans: 600 }
+import type { FrameSettings } from '../types'
+import { getFont } from './fonts'
 
 export interface TextLine {
   text: string
@@ -18,22 +11,17 @@ export interface TextLine {
 
 const font = (l: TextLine, size = l.size): string => `${l.weight} ${size}px ${l.family}`
 
-function metaFamily(frame: FrameSettings): string {
-  return frame.font === 'typewriter' ? FONT_FAMILY.typewriter : FONT_FAMILY.sans
-}
-
 /** Caption plus the non-empty info fields, top to bottom. */
-export function stackLines(frame: FrameSettings, captionSize: number, metaSize: number, metaFont?: string): TextLine[] {
+export function stackLines(frame: FrameSettings, captionSize: number, metaSize: number): TextLine[] {
   const lines: TextLine[] = []
   const caption = frame.caption.trim()
-  if (caption) {
-    lines.push({ text: caption, size: captionSize, weight: CAPTION_WEIGHT[frame.font], family: FONT_FAMILY[frame.font], alpha: 1 })
-  }
-  const family = metaFont ?? metaFamily(frame)
+  const capFont = getFont(frame.font)
+  if (caption) lines.push({ text: caption, size: captionSize, weight: capFont.bold, family: capFont.family, alpha: 1 })
+  const meta = getFont(frame.metaFont)
   const { camera, lens, exposure, date } = frame.info
-  if (camera.trim()) lines.push({ text: camera.trim(), size: metaSize * 1.08, weight: 600, family, alpha: 0.9 })
+  if (camera.trim()) lines.push({ text: camera.trim(), size: metaSize * 1.08, weight: meta.bold, family: meta.family, alpha: 0.9 })
   for (const t of [lens, exposure, date]) {
-    if (t.trim()) lines.push({ text: t.trim(), size: metaSize, weight: 400, family, alpha: 0.72 })
+    if (t.trim()) lines.push({ text: t.trim(), size: metaSize, weight: meta.regular, family: meta.family, alpha: 0.72 })
   }
   return lines
 }
@@ -81,15 +69,16 @@ export function drawStrip(
 ): void {
   const s = box.h
   const pad = Math.max(box.w * 0.035, s * 0.22)
-  const family = metaFamily(frame)
+  const meta = getFont(frame.metaFont)
+  const capFont = getFont(frame.font)
   const { camera, lens, exposure, date } = frame.info
   const caption = frame.caption.trim()
-  const mk = (text: string, size: number, weight: number, alpha: number, fam = family): TextLine => ({
+  const mk = (text: string, size: number, weight: number, alpha: number, fam = meta.family): TextLine => ({
     text: text.trim(), size, weight, family: fam, alpha,
   })
-  const left = [mk(camera, s * 0.2, 600, 1), mk(lens, s * 0.135, 400, 0.6)].filter((l) => l.text)
-  const right = [mk(exposure, s * 0.17, 500, 1), mk(date, s * 0.135, 400, 0.6)].filter((l) => l.text)
-  const cap = caption ? mk(caption, s * 0.26, CAPTION_WEIGHT[frame.font], 1, FONT_FAMILY[frame.font]) : null
+  const left = [mk(camera, s * 0.2, meta.bold, 1), mk(lens, s * 0.135, meta.regular, 0.6)].filter((l) => l.text)
+  const right = [mk(exposure, s * 0.17, meta.bold, 1), mk(date, s * 0.135, meta.regular, 0.6)].filter((l) => l.text)
+  const cap = caption ? mk(caption, s * 0.26, capFont.bold, 1, capFont.family) : null
 
   const width = (ls: TextLine[], k: number) =>
     ls.reduce((m, l) => {

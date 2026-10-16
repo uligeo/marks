@@ -7,11 +7,15 @@ interface StageProps {
   fontsReady: boolean
   onHistogram: (h: Histogram) => void
   onPan: (dx: number, dy: number) => void
+  /** A tap without dragging. */
+  onTap: () => void
 }
 
-export function Stage({ input, fontsReady, onHistogram, onPan }: StageProps) {
+const TAP_SLOP = 6
+
+export function Stage({ input, fontsReady, onHistogram, onPan, onTap }: StageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const drag = useRef<{ x: number; y: number } | null>(null)
+  const drag = useRef<{ x: number; y: number; moved: number } | null>(null)
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -21,18 +25,22 @@ export function Stage({ input, fontsReady, onHistogram, onPan }: StageProps) {
   }, [input, fontsReady, onHistogram])
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    drag.current = { x: e.clientX, y: e.clientY }
+    drag.current = { x: e.clientX, y: e.clientY, moved: 0 }
     e.currentTarget.setPointerCapture(e.pointerId)
   }
 
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!drag.current) return
     const rect = e.currentTarget.getBoundingClientRect()
-    onPan((e.clientX - drag.current.x) / rect.width, (e.clientY - drag.current.y) / rect.height)
-    drag.current = { x: e.clientX, y: e.clientY }
+    const dx = e.clientX - drag.current.x
+    const dy = e.clientY - drag.current.y
+    const moved = drag.current.moved + Math.abs(dx) + Math.abs(dy)
+    drag.current = { x: e.clientX, y: e.clientY, moved }
+    if (moved > TAP_SLOP) onPan(dx / rect.width, dy / rect.height)
   }
 
-  const endDrag = () => {
+  const endDrag = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.type === 'pointerup' && drag.current && drag.current.moved <= TAP_SLOP) onTap()
     drag.current = null
   }
 

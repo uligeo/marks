@@ -13,8 +13,8 @@ export default defineConfig({
         short_name: 'Marcos',
         description: 'Edita tus fotos, lee sus datos EXIF y ponles un marco estilo instantánea.',
         lang: 'es',
-        theme_color: '#1e2a36',
-        background_color: '#dde1e4',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
         display: 'standalone',
         orientation: 'any',
         icons: [
@@ -25,17 +25,6 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts',
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
       },
     }),
   ],

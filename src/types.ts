@@ -35,8 +35,6 @@ export interface Transform {
   panY: number
 }
 
-export type CaptionFont = 'hand' | 'typewriter' | 'sans'
-
 /** Editable texts printed on the frame; an empty field is not printed. */
 export interface FrameInfo {
   camera: string
@@ -49,7 +47,9 @@ export interface FrameSettings {
   styleId: string
   color: string
   caption: string
-  font: CaptionFont
+  /** Font ids from the font registry. */
+  font: string
+  metaFont: string
   info: FrameInfo
   /** Output aspect ratio for the blurred-background style; null fits the photo. */
   canvasAspect: number | null
@@ -106,7 +106,7 @@ export interface CollageSettings {
   /** Index of the cell whose photo is blurred for the background. */
   blurSource: number
   caption: string
-  font: CaptionFont
+  font: string
 }
 
 export interface CollageState {

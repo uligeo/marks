@@ -1,6 +1,8 @@
-import type { CaptionFont, ExifSummary, FrameInfo, FrameSettings } from '../types'
+import type { ExifSummary, FrameInfo, FrameSettings } from '../types'
 import { infoFromExif } from '../lib/exif'
 import { CANVAS_ASPECTS, FRAME_COLORS, FRAME_STYLES, getFrameStyle } from '../lib/frame'
+import { DATA_FONTS, FONTS } from '../lib/fonts'
+import { FontPicker } from './FontPicker'
 
 interface FramePanelProps {
   value: FrameSettings
@@ -8,12 +10,6 @@ interface FramePanelProps {
   onChange: (value: FrameSettings) => void
   onStyleChange: (styleId: string) => void
 }
-
-const FONTS: { id: CaptionFont; label: string }[] = [
-  { id: 'hand', label: 'A mano' },
-  { id: 'typewriter', label: 'Máquina' },
-  { id: 'sans', label: 'Limpia' },
-]
 
 const INFO_FIELDS: { key: keyof FrameInfo; label: string; placeholder: string }[] = [
   { key: 'camera', label: 'Cámara', placeholder: 'Ej. Fujifilm X-T5' },
@@ -105,19 +101,7 @@ export function FramePanel({ value, exif, onChange, onStyleChange }: FramePanelP
         />
       </label>
 
-      <div className="segmented" role="group" aria-label="Letra">
-        {FONTS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            className={`font-${f.id}`}
-            aria-pressed={value.font === f.id}
-            onClick={() => set({ font: f.id })}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      <FontPicker label="Letra de tu texto" fonts={FONTS} value={value.font} onChange={(font) => set({ font })} />
 
       <fieldset className="field info-fields">
         <legend>Datos impresos</legend>
@@ -135,6 +119,7 @@ export function FramePanel({ value, exif, onChange, onStyleChange }: FramePanelP
           </label>
         ))}
         <p className="hint">Deja un campo vacío para no imprimirlo.</p>
+        <FontPicker label="Letra de los datos" fonts={DATA_FONTS} value={value.metaFont} onChange={(metaFont) => set({ metaFont })} />
         <button type="button" className="btn btn-ghost" disabled={!exif} onClick={() => set({ info: infoFromExif(exif) })}>
           Restaurar datos de la foto
         </button>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { LoadedPhoto } from './types'
-import { loadCanvasFonts } from './lib/frame'
+import { loadCanvasFonts } from './lib/fonts'
 import { loadPhoto } from './lib/image'
 import { MAX_PHOTOS } from './lib/collageLayouts'
 import { CollageEditor } from './components/collage/CollageEditor'
