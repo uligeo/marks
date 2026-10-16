@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Marcos instantáneos',
-        short_name: 'Marcos',
+        name: 'Marks',
+        short_name: 'Marks',
         description: 'Edita tus fotos, lee sus datos EXIF y ponles un marco estilo instantánea.',
         lang: 'es',
         theme_color: '#ffffff',

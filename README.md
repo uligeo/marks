@@ -1,8 +1,10 @@
-# Marcos instantáneos
+# Marks
 
 PWA para editar fotos y ponerles un marco estilo instantánea. Lee los metadatos EXIF de la cámara y puede imprimirlos en el marco. Todo el procesamiento ocurre en el navegador; las fotos no se suben a ningún servidor.
 
 ## Funciones
+
+- **Formatos**: JPG, PNG, WebP, HEIC (en Safari) y **RAW CR3 de Canon**. Del CR3 se usa el JPEG a resolución completa que guarda la cámara dentro del archivo, con su EXIF (cámara, objetivo, exposición, fecha, GPS) y su orientación; no es un revelado RAW del sensor. Otros RAW (NEF, ARW, RAF, DNG, CR2…) aún no se abren.
 
 - **Filtros**: 108 filtros en un carrete deslizable, con miniaturas sobre tu propia foto e intensidad ajustable: 54 inspirados en cámaras y películas (instantáneas, compactas, desechables, de juguete, telemétricas, medio formato, cine, diapositiva, negativo) y 54 creativos (incluidos 12 en blanco y negro).
 - **Textos y stickers**: capas que se mueven con un dedo y se agrandan o giran con dos; varios textos con letra, color y fondo, emojis o imágenes propias (PNG, JPG, WebP o el primer cuadro de un GIF).

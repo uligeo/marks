@@ -213,8 +213,8 @@ export function naturalExportSize(input: RenderInput): Size {
   return frameLayout(c.w, c.h, input.frame)
 }
 
-function withOriginalExif(originalDataUrl: string, outDataUrl: string, keepGps: boolean): string {
-  const data = piexif.load(originalDataUrl)
+function withExif(source: piexif.ExifDict, outDataUrl: string, keepGps: boolean): string {
+  const data: piexif.ExifDict = { ...source }
   data['0th'] = { ...data['0th'], [piexif.ImageIFD.Orientation]: 1 }
   delete data.thumbnail
   data['1st'] = {}
@@ -245,10 +245,10 @@ export async function exportImage(input: RenderInput, opts: ExportOptions): Prom
   const blob = await canvasToBlob(out, opts.format, JPEG_QUALITY[opts.quality])
   out.width = 0
   const isJpegSource = /jpe?g/i.test(input.photo.file.type)
-  if (opts.format !== 'image/jpeg' || !opts.keepExif || !isJpegSource) return { blob, ...result }
+  if (opts.format !== 'image/jpeg' || !opts.keepExif || !(isJpegSource || input.photo.exifDict)) return { blob, ...result }
   try {
-    const [orig, rendered] = await Promise.all([readAsDataUrl(input.photo.file), readAsDataUrl(blob)])
-    return { blob: dataUrlToBlob(withOriginalExif(orig, rendered, opts.keepGps)), ...result }
+    const source = input.photo.exifDict ?? piexif.load(await readAsDataUrl(input.photo.file))
+    return { blob: dataUrlToBlob(withExif(source, await readAsDataUrl(blob), opts.keepGps)), ...result }
   } catch {
     return { blob, ...result }
   }

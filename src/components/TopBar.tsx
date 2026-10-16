@@ -29,7 +29,7 @@ export function TopBar({ onHome, history, onExport, children }: TopBarProps) {
       ) : (
         <span className="brand">
           <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={24} height={24} />
-          Marcos
+          Marks
         </span>
       )}
       {!history && <ThemeToggle />}

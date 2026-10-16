@@ -1,7 +1,7 @@
 import exifr from 'exifr'
 import type { ExifSummary, FrameInfo } from '../types'
 
-type RawExif = Record<string, unknown>
+export type RawExif = Record<string, unknown>
 
 const num = (v: unknown): number | undefined =>
   typeof v === 'number' && Number.isFinite(v) ? v : undefined
@@ -16,8 +16,11 @@ export async function readExif(file: File): Promise<ExifSummary | null> {
   } catch {
     return null
   }
-  if (!raw) return null
+  return raw ? summarizeExif(raw) : null
+}
 
+/** Normalizes exifr-style named tags into the summary the interface uses. */
+export function summarizeExif(raw: RawExif): ExifSummary {
   const make = str(raw.Make)
   let model = str(raw.Model)
   if (make && model?.toLowerCase().startsWith(make.toLowerCase())) {

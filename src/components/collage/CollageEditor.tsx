@@ -120,7 +120,7 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
     const loaded = (await Promise.allSettled(files.map(loadPhoto)))
       .filter((r): r is PromiseFulfilledResult<LoadedPhoto> => r.status === 'fulfilled')
       .map((r) => r.value)
-    if (loaded.length < files.length) setError('Algunas imágenes no se pudieron abrir. Si son HEIC, conviértelas a JPG.')
+    if (loaded.length < files.length) setError('Algunas imágenes no se pudieron abrir. Se admiten JPG, PNG, WebP, HEIC (en Safari) y RAW CR3.')
     if (!loaded.length) return
     const index = replacing.current
     if (index !== null) {
@@ -210,7 +210,7 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
       <input
         ref={fileInput}
         type="file"
-        accept="image/*,.heic,.heif"
+        accept="image/*,.heic,.heif,.cr3"
         hidden
         onChange={(e) => {
           onFiles(Array.from(e.target.files ?? []))

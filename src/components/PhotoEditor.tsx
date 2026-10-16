@@ -220,7 +220,7 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
       {exporting && (
         <ExportSheet
           naturalSize={naturalExportSize({ photo, ...edit })}
-          canKeepExif={/jpe?g/i.test(photo.file.type) && Boolean(photo.exif)}
+          canKeepExif={(/jpe?g/i.test(photo.file.type) && Boolean(photo.exif)) || Boolean(photo.exifDict)}
           hasGps={hasGps(photo.exif)}
           onExport={runExport}
           onClose={() => setExporting(false)}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { LoadedPhoto } from './types'
 import { loadCanvasFonts } from './lib/fonts'
-import { loadPhoto } from './lib/image'
+import { UNSUPPORTED_RAW, loadPhoto } from './lib/image'
 import { MAX_PHOTOS } from './lib/collageLayouts'
 import { CollageEditor } from './components/collage/CollageEditor'
 import { EmptyState } from './components/EmptyState'
@@ -11,7 +11,8 @@ import { UpdatePrompt } from './components/UpdatePrompt'
 
 type Mode = { kind: 'home' } | { kind: 'photo'; photo: LoadedPhoto; key: number } | { kind: 'collage'; photos: LoadedPhoto[] }
 
-const isImage = (f: File): boolean => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name)
+const isImage = (f: File): boolean =>
+  !UNSUPPORTED_RAW.test(f.name) && (f.type.startsWith('image/') || /\.(heic|heif|cr3)$/i.test(f.name))
 
 export default function App() {
   const [mode, setMode] = useState<Mode>({ kind: 'home' })
@@ -30,7 +31,11 @@ export default function App() {
   const openFiles = async (files: File[]) => {
     const images = files.filter(isImage).slice(0, MAX_PHOTOS)
     if (!images.length) {
-      if (files.length) setError('Ese archivo no es una imagen. Elige fotos JPG, PNG o WebP.')
+      if (files.some((f) => UNSUPPORTED_RAW.test(f.name))) {
+        setError('De los archivos RAW, por ahora sólo se abren los CR3 de Canon. Exporta los demás a JPG desde tu cámara o editor.')
+      } else if (files.length) {
+        setError('Ese archivo no es una imagen. Elige fotos JPG, PNG, WebP, HEIC o RAW CR3.')
+      }
       return
     }
     setLoading(true)
@@ -41,7 +46,7 @@ export default function App() {
       .map((r) => r.value)
     setLoading(false)
     if (!photos.length) {
-      setError('Este navegador no puede abrir esa imagen. Si es HEIC, conviértela a JPG o usa Safari.')
+      setError('No se pudo abrir esa imagen. Si es HEIC, conviértela a JPG o usa Safari; si es CR3, puede que el archivo esté dañado.')
       return
     }
     const base = collageBase.current
@@ -103,7 +108,7 @@ export default function App() {
       <input
         ref={fileInput}
         type="file"
-        accept="image/*,.heic,.heif"
+        accept="image/*,.heic,.heif,.cr3"
         hidden
         onChange={(e) => {
           openFiles(Array.from(e.target.files ?? []))

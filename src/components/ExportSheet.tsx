@@ -115,7 +115,7 @@ export function ExportSheet({ naturalSize, exifOptions = true, canKeepExif, hasG
                 <span>Incluir la ubicación GPS</span>
               </label>
             )}
-            {exifOptions && !canKeepExif && <p className="hint">Sólo se pueden conservar los EXIF de fotos JPG.</p>}
+            {exifOptions && !canKeepExif && <p className="hint">Sólo se pueden conservar los EXIF de fotos JPG o RAW CR3.</p>}
             {error && <p className="error" role="alert">{error}</p>}
 
             <div className="sheet-actions">

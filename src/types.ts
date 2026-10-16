@@ -1,3 +1,5 @@
+import type piexif from 'piexifjs'
+
 export type HslBand = 'red' | 'orange' | 'yellow' | 'green' | 'aqua' | 'blue' | 'purple' | 'magenta'
 
 export interface HslShift {
@@ -122,6 +124,8 @@ export interface ExifSummary {
 
 export interface LoadedPhoto {
   file: File
+  /** EXIF to write on export when it cannot be copied from the file itself (RAW sources). */
+  exifDict?: piexif.ExifDict
   full: ImageBitmap
   preview: ImageBitmap
   exif: ExifSummary | null

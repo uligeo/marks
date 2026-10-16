@@ -13,7 +13,7 @@ export function EmptyState({ onPick, onPickMany, error, loading }: EmptyStatePro
         <span className="empty-caption">{loading ? 'Revelando…' : 'Elige una foto'}</span>
       </button>
       <p className="empty-text">
-        O arrástrala aquí. Lee los datos EXIF de tu cámara, ajusta luz y color, y expórtala con su marco.
+        O arrástrala aquí: JPG, PNG, WebP, HEIC o RAW CR3. Lee los datos EXIF de tu cámara, ajusta luz y color, y expórtala con su marco.
       </p>
       <button type="button" className="btn" onClick={onPickMany} disabled={loading}>
         Crear un collage con varias fotos
