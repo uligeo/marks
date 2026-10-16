@@ -78,3 +78,5 @@ export const IconAddPhotos = () => (
     <path d="M10 11v6M7 14h6" />
   </Icon>
 )
+export const IconCheck = () => <Icon><path d="M5 12.5l4.5 4.5L19 7.5" /></Icon>
+export const IconClose = () => <Icon><path d="M6 6l12 12M18 6L6 18" /></Icon>

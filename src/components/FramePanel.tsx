@@ -26,6 +26,7 @@ export function FramePanel({ value, exif, onChange, onStyleChange }: FramePanelP
 
   return (
     <div className="panel-body">
+      <p className="hint">El marco respeta tu recorte. Para la forma clásica de instantánea, recorta en 1:1 desde Recortar.</p>
       <div className="frame-styles" role="group" aria-label="Tipo de marco">
         {FRAME_STYLES.map((s) => (
           <button

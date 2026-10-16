@@ -53,11 +53,15 @@ export function FilterPanel({ source, value, onChange }: FilterPanelProps) {
           </button>
         ))}
       </div>
-      {active && (
-        <Slider label={`Intensidad de ${active.name}`} min={0} max={1} neutral={1} value={value.amount}
-          format={(v) => `${Math.round(v * 100)} %`} onChange={(amount) => onChange({ ...value, amount })} />
-      )}
-      <div className="filter-grid" role="group" aria-label="Filtros">
+      <div
+        className="filter-reel"
+        role="group"
+        aria-label="Filtros"
+        onWheel={(e) => {
+          // A mouse wheel scrolls the reel sideways on desktop.
+          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) e.currentTarget.scrollLeft += e.deltaY
+        }}
+      >
         <button type="button" className="filter-option" aria-pressed={!active} onClick={() => onChange({ id: null, amount: 1 })}>
           <FilterThumb base={base} filter={null} order={0} />
           <span>Original</span>
@@ -70,6 +74,10 @@ export function FilterPanel({ source, value, onChange }: FilterPanelProps) {
           </button>
         ))}
       </div>
+      {active && (
+        <Slider label={`Intensidad de ${active.name}`} min={0} max={1} neutral={1} value={value.amount}
+          format={(v) => `${Math.round(v * 100)} %`} onChange={(amount) => onChange({ ...value, amount })} />
+      )}
     </div>
   )
 }

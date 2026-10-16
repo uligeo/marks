@@ -5,7 +5,6 @@ import { autoAdjust, histogramOf } from '../lib/auto'
 import { fitAspect, orientedSize, panCrop, zoomCrop } from '../lib/crop'
 import { NO_LOOK } from '../lib/filters'
 import { infoFromExif } from '../lib/exif'
-import { getFrameStyle } from '../lib/frame'
 import type { Histogram } from '../lib/pipeline'
 import { exportImage, hasGps, naturalExportSize, type ExportOptions } from '../lib/render'
 import { saveBlob } from '../lib/save'
@@ -23,7 +22,19 @@ import { LayersPanel } from './LayersPanel'
 import { Stage } from './Stage'
 import { ToolRail, type Tool } from './ToolRail'
 import { TopBar } from './TopBar'
-import { IconAddPhotos, IconCompare, IconCrop, IconFrame, IconImage, IconInfo, IconPresets, IconSliders, IconText } from './icons'
+import {
+  IconAddPhotos,
+  IconCheck,
+  IconClose,
+  IconCompare,
+  IconCrop,
+  IconFrame,
+  IconImage,
+  IconInfo,
+  IconPresets,
+  IconSliders,
+  IconText,
+} from './icons'
 
 interface EditState {
   adjustments: Adjustments
@@ -49,9 +60,9 @@ function initialEdit(photo: LoadedPhoto): EditState {
     adjustments: neutralAdjustments(),
     look: NO_LOOK,
     layers: [],
-    transform: { rotation: 0, straighten: 0, flipH: false, aspect: 1, crop: fitAspect(orientedSize(photo.full, 0), 1) },
+    transform: { rotation: 0, straighten: 0, flipH: false, aspect: null, crop: fitAspect(orientedSize(photo.full, 0), null) },
     frame: {
-      styleId: 'classic',
+      styleId: 'none',
       color: '#fbfbf8',
       caption: '',
       font: 'hand',
@@ -75,6 +86,8 @@ interface PhotoEditorProps {
 
 export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPhotos }: PhotoEditorProps) {
   const [tool, setTool] = useState<Tab | null>('filters')
+  /** Crop being edited; it reaches the history only when applied. */
+  const [cropDraft, setCropDraft] = useState<Transform | null>(null)
   const [chrome, setChrome] = useState(true)
   const [compare, setCompare] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -86,17 +99,6 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
   const layers = useLayers(edit.layers, (next) => update({ layers: next }), () => setTool('layers'))
   const original = useMemo(() => histogramOf(photo.preview), [photo])
 
-  const changeFrameStyle = (styleId: string) => {
-    const style = getFrameStyle(styleId)
-    update({
-      frame: { ...edit.frame, styleId },
-      transform: {
-        ...edit.transform,
-        aspect: style.aspect,
-        crop: fitAspect(orientedSize(photo.full, edit.transform.rotation), style.aspect),
-      },
-    })
-  }
 
   const pan = useCallback(
     (dx: number, dy: number) => {
@@ -105,6 +107,23 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
     },
     [edit.transform, update],
   )
+
+  const selectTool = (next: Tab | null) => {
+    if (tool === 'crop' && cropDraft) update({ transform: cropDraft })
+    setCropDraft(next === 'crop' ? edit.transform : null)
+    setTool(next)
+  }
+
+  const applyCrop = () => {
+    if (cropDraft) update({ transform: cropDraft })
+    setCropDraft(null)
+    setTool(null)
+  }
+
+  const cancelCrop = () => {
+    setCropDraft(null)
+    setTool(null)
+  }
 
   const zoom = useCallback(
     (ratio: number) => {
@@ -155,8 +174,20 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
       </TopBar>
 
       <main className="stage">
-        {tool === 'crop' ? (
-          <CropStage photo={photo.preview} transform={edit.transform} onChange={(transform) => update({ transform })} />
+        {tool === 'crop' && cropDraft ? (
+          <>
+            <CropStage photo={photo.preview} transform={cropDraft} onChange={setCropDraft} />
+            <div className="crop-actions">
+              <button type="button" className="crop-action" onClick={cancelCrop} aria-label="Cancelar el recorte">
+                <IconClose />
+                <span>Cancelar</span>
+              </button>
+              <button type="button" className="crop-action crop-action-apply" onClick={applyCrop} aria-label="Aplicar el recorte">
+                <IconCheck />
+                <span>Aplicar</span>
+              </button>
+            </div>
+          </>
         ) : (
           <Stage input={renderInput} fontsReady={fontsReady} layers={layers.gestures} onHistogram={setHistogram}
             onPan={pan} onZoom={zoom} onTap={() => setChrome((c) => !c)} />
@@ -172,9 +203,9 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
               <AdjustPanel value={edit.adjustments} histogram={histogram} onChange={(adjustments) => update({ adjustments })}
                 onAuto={() => update({ adjustments: autoAdjust(edit.adjustments, original) })} />
             )}
-            {tool === 'crop' && <CropPanel source={photo.full} value={edit.transform} onChange={(transform) => update({ transform })} />}
+            {tool === 'crop' && cropDraft && <CropPanel source={photo.full} value={cropDraft} onChange={setCropDraft} />}
             {tool === 'frame' && (
-              <FramePanel value={edit.frame} exif={photo.exif} onChange={(frame) => update({ frame })} onStyleChange={changeFrameStyle} />
+              <FramePanel value={edit.frame} exif={photo.exif} onChange={(frame) => update({ frame })} onStyleChange={(styleId) => update({ frame: { ...edit.frame, styleId } })} />
             )}
             {tool === 'layers' && (
               <LayersPanel layers={edit.layers} selected={layers.selected} onChange={layers.change} onSelect={layers.select} />
@@ -184,7 +215,7 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
         </aside>
       )}
 
-      <ToolRail tools={TOOLS} active={tool} onSelect={setTool} label="Herramientas" />
+      <ToolRail tools={TOOLS} active={tool} onSelect={selectTool} label="Herramientas" />
 
       {exporting && (
         <ExportSheet

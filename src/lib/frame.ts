@@ -7,8 +7,6 @@ export interface FrameStyle {
   id: string
   name: string
   kind: FrameKind
-  /** Native photo aspect ratio (width / height); null keeps the photo's own. */
-  aspect: number | null
   /** Border sizes as a fraction of the photo width. */
   side: number
   top: number
@@ -16,14 +14,14 @@ export interface FrameStyle {
 }
 
 export const FRAME_STYLES: FrameStyle[] = [
-  { id: 'classic', name: 'Clásico', kind: 'polaroid', aspect: 1, side: 0.057, top: 0.073, bottom: 0.27 },
-  { id: 'wide', name: 'Panorámico', kind: 'polaroid', aspect: 99 / 62, side: 0.045, top: 0.06, bottom: 0.2 },
-  { id: 'mini', name: 'Mini', kind: 'polaroid', aspect: 46 / 62, side: 0.087, top: 0.087, bottom: 0.33 },
-  { id: 'strip', name: 'Franja', kind: 'strip', aspect: null, side: 0, top: 0, bottom: 0.13 },
-  { id: 'gallery', name: 'Galería', kind: 'strip', aspect: null, side: 0.035, top: 0.035, bottom: 0.13 },
-  { id: 'blur', name: 'Desenfoque', kind: 'blur', aspect: null, side: 0, top: 0, bottom: 0 },
-  { id: 'overlay', name: 'Sobre la foto', kind: 'overlay', aspect: null, side: 0, top: 0, bottom: 0 },
-  { id: 'none', name: 'Sin marco', kind: 'polaroid', aspect: null, side: 0, top: 0, bottom: 0 },
+  { id: 'none', name: 'Sin marco', kind: 'polaroid', side: 0, top: 0, bottom: 0 },
+  { id: 'classic', name: 'Clásico', kind: 'polaroid', side: 0.057, top: 0.073, bottom: 0.27 },
+  { id: 'wide', name: 'Panorámico', kind: 'polaroid', side: 0.045, top: 0.06, bottom: 0.2 },
+  { id: 'mini', name: 'Mini', kind: 'polaroid', side: 0.087, top: 0.087, bottom: 0.33 },
+  { id: 'strip', name: 'Franja', kind: 'strip', side: 0, top: 0, bottom: 0.13 },
+  { id: 'gallery', name: 'Galería', kind: 'strip', side: 0.035, top: 0.035, bottom: 0.13 },
+  { id: 'blur', name: 'Desenfoque', kind: 'blur', side: 0, top: 0, bottom: 0 },
+  { id: 'overlay', name: 'Sobre la foto', kind: 'overlay', side: 0, top: 0, bottom: 0 },
 ]
 
 export const FRAME_COLORS = ['#fbfbf8', '#f3ead8', '#e9e4dc', '#1f1f22', '#9fb4c7', '#e5b9b0']
