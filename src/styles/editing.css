@@ -79,3 +79,7 @@
 .sticker-option:focus-visible {
   background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
+
+.crop-canvas {
+  cursor: move;
+}

@@ -1,5 +1,6 @@
 import piexif from 'piexifjs'
 import type { Adjustments, ExifSummary, FrameSettings, Layer, LoadedPhoto, Look, Transform } from '../types'
+import { orientedSize } from './crop'
 import { mergeLook } from './filters'
 import { drawLayers, drawSelection, type LayerBox } from './layers'
 import { applyAdjustments, computeHistogram, type Histogram } from './pipeline'
@@ -26,21 +27,9 @@ interface CropRect {
 }
 
 function cropRect(src: ImageBitmap, t: Transform): CropRect {
-  const swap = t.rotation === 90 || t.rotation === 270
-  const W = swap ? src.height : src.width
-  const H = swap ? src.width : src.height
-  const aspect = t.aspect ?? W / H
-  let w = W
-  let h = W / aspect
-  if (h > H) {
-    h = H
-    w = H * aspect
-  }
-  w /= t.zoom
-  h /= t.zoom
-  const x = (W - w) / 2 + (t.panX * (W - w)) / 2
-  const y = (H - h) / 2 + (t.panY * (H - h)) / 2
-  return { x, y, w, h, orientedW: W, orientedH: H }
+  const { w: W, h: H } = orientedSize(src, t.rotation)
+  const c = t.crop
+  return { x: c.x * W, y: c.y * H, w: c.w * W, h: c.h * H, orientedW: W, orientedH: H }
 }
 
 /** Scale needed so a rotated image still covers the whole crop. */

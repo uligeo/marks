@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import type { Adjustments, FrameSettings, Layer, LoadedPhoto, Look, Transform } from '../types'
 import { neutralAdjustments } from '../lib/adjust'
 import { autoAdjust, histogramOf } from '../lib/auto'
+import { fitAspect, orientedSize, panCrop, zoomCrop } from '../lib/crop'
 import { NO_LOOK } from '../lib/filters'
 import { infoFromExif } from '../lib/exif'
 import { getFrameStyle } from '../lib/frame'
@@ -13,6 +14,7 @@ import { useLayers } from '../hooks/useLayers'
 import { useUndoKeys } from '../hooks/useUndoKeys'
 import { AdjustPanel } from './AdjustPanel'
 import { CropPanel } from './CropPanel'
+import { CropStage } from './CropStage'
 import { ExifPanel } from './ExifPanel'
 import { ExportSheet } from './ExportSheet'
 import { FilterPanel } from './FilterPanel'
@@ -42,14 +44,12 @@ const TOOLS: Tool<Tab>[] = [
   { id: 'info', label: 'Datos', icon: <IconInfo /> },
 ]
 
-const PAN_SENSITIVITY = 2.5
-
 function initialEdit(photo: LoadedPhoto): EditState {
   return {
     adjustments: neutralAdjustments(),
     look: NO_LOOK,
     layers: [],
-    transform: { rotation: 0, straighten: 0, flipH: false, aspect: 1, zoom: 1, panX: 0, panY: 0 },
+    transform: { rotation: 0, straighten: 0, flipH: false, aspect: 1, crop: fitAspect(orientedSize(photo.full, 0), 1) },
     frame: {
       styleId: 'classic',
       color: '#fbfbf8',
@@ -63,8 +63,6 @@ function initialEdit(photo: LoadedPhoto): EditState {
     },
   }
 }
-
-const clampPan = (v: number): number => Math.max(-1, Math.min(1, v))
 
 interface PhotoEditorProps {
   photo: LoadedPhoto
@@ -92,14 +90,18 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
     const style = getFrameStyle(styleId)
     update({
       frame: { ...edit.frame, styleId },
-      transform: { ...edit.transform, aspect: style.aspect, panX: 0, panY: 0 },
+      transform: {
+        ...edit.transform,
+        aspect: style.aspect,
+        crop: fitAspect(orientedSize(photo.full, edit.transform.rotation), style.aspect),
+      },
     })
   }
 
   const pan = useCallback(
     (dx: number, dy: number) => {
       const t = edit.transform
-      update({ transform: { ...t, panX: clampPan(t.panX - dx * PAN_SENSITIVITY), panY: clampPan(t.panY - dy * PAN_SENSITIVITY) } })
+      update({ transform: { ...t, crop: panCrop(t.crop, -dx * t.crop.w, -dy * t.crop.h) } })
     },
     [edit.transform, update],
   )
@@ -107,7 +109,7 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
   const zoom = useCallback(
     (ratio: number) => {
       const t = edit.transform
-      update({ transform: { ...t, zoom: Math.max(1, Math.min(3, t.zoom * ratio)) } })
+      update({ transform: { ...t, crop: zoomCrop(t.crop, ratio) } })
     },
     [edit.transform, update],
   )
@@ -153,8 +155,12 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
       </TopBar>
 
       <main className="stage">
-        <Stage input={renderInput} fontsReady={fontsReady} layers={layers.gestures} onHistogram={setHistogram}
-          onPan={pan} onZoom={zoom} onTap={() => setChrome((c) => !c)} />
+        {tool === 'crop' ? (
+          <CropStage photo={photo.preview} transform={edit.transform} onChange={(transform) => update({ transform })} />
+        ) : (
+          <Stage input={renderInput} fontsReady={fontsReady} layers={layers.gestures} onHistogram={setHistogram}
+            onPan={pan} onZoom={zoom} onTap={() => setChrome((c) => !c)} />
+        )}
         {compare && <span className="badge">Original</span>}
       </main>
 
@@ -166,7 +172,7 @@ export function PhotoEditor({ photo, fontsReady, onHome, onOpenAnother, onAddPho
               <AdjustPanel value={edit.adjustments} histogram={histogram} onChange={(adjustments) => update({ adjustments })}
                 onAuto={() => update({ adjustments: autoAdjust(edit.adjustments, original) })} />
             )}
-            {tool === 'crop' && <CropPanel value={edit.transform} onChange={(transform) => update({ transform })} />}
+            {tool === 'crop' && <CropPanel source={photo.full} value={edit.transform} onChange={(transform) => update({ transform })} />}
             {tool === 'frame' && (
               <FramePanel value={edit.frame} exif={photo.exif} onChange={(frame) => update({ frame })} onStyleChange={changeFrameStyle} />
             )}

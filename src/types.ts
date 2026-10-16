@@ -63,14 +63,21 @@ export interface StickerLayer extends LayerBase {
 
 export type Layer = TextLayer | StickerLayer
 
+/** Crop rectangle as fractions of the rotated photo (0..1). */
+export interface CropBox {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
 export interface Transform {
   rotation: 0 | 90 | 180 | 270
   straighten: number
   flipH: boolean
+  /** Locked pixel aspect ratio for the crop; null means free. */
   aspect: number | null
-  zoom: number
-  panX: number
-  panY: number
+  crop: CropBox
 }
 
 /** Editable texts printed on the frame; an empty field is not printed. */
