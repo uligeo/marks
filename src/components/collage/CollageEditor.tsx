@@ -11,24 +11,28 @@ import { useUndoKeys } from '../../hooks/useUndoKeys'
 import { ExportSheet } from '../ExportSheet'
 import { ToolRail, type Tool } from '../ToolRail'
 import { TopBar } from '../TopBar'
-import { IconFill, IconImage, IconLayout, IconStyle } from '../icons'
+import { IconFill, IconImage, IconLayout, IconStyle, IconText } from '../icons'
+import { LayersPanel } from '../LayersPanel'
+import { NO_LOOK } from '../../lib/filters'
+import { useLayers } from '../../hooks/useLayers'
 import { CellPanel } from './CellPanel'
 import { BackgroundPanel, LayoutPanel, StylePanel } from './CollagePanels'
 import { CollageStage } from './CollageStage'
 
-type Tab = 'layout' | 'background' | 'style' | 'photo'
+type Tab = 'layout' | 'background' | 'style' | 'photo' | 'layers'
 
 const TOOLS: Tool<Tab>[] = [
   { id: 'layout', label: 'Diseño', icon: <IconLayout /> },
   { id: 'background', label: 'Fondo', icon: <IconFill /> },
   { id: 'style', label: 'Estilo', icon: <IconStyle /> },
   { id: 'photo', label: 'Foto', icon: <IconImage /> },
+  { id: 'layers', label: 'Texto', icon: <IconText /> },
 ]
 
 let nextId = 0
 function makeCell(photo: LoadedPhoto): CollageCell {
   nextId += 1
-  return { id: `cell-${nextId}`, photo, adjustments: neutralAdjustments(), zoom: 1, panX: 0, panY: 0 }
+  return { id: `cell-${nextId}`, photo, adjustments: neutralAdjustments(), look: NO_LOOK, zoom: 1, panX: 0, panY: 0 }
 }
 
 const DEFAULT_SETTINGS: CollageSettings = {
@@ -61,11 +65,12 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
   const [error, setError] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const replacing = useRef<number | null>(null)
-  const history = useHistory<CollageState>({ cells: photos.map(makeCell), settings: DEFAULT_SETTINGS })
+  const history = useHistory<CollageState>({ cells: photos.map(makeCell), settings: DEFAULT_SETTINGS, layers: [] })
   const state = history.state
   const { cells, settings } = state
   useUndoKeys(history.undo, history.redo)
 
+  const layers = useLayers(state.layers, (next) => history.set({ ...state, layers: next }), () => setTool('layers'))
   const setSettings = (patch: Partial<CollageSettings>) => history.set({ ...state, settings: { ...settings, ...patch } })
   const setCells = (next: CollageCell[], select: number | null = selected) => {
     history.set({ ...state, cells: next, settings: { ...settings, blurSource: Math.min(settings.blurSource, next.length - 1) } })
@@ -127,6 +132,12 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
     }
   }
 
+  const swap = (a: number, b: number) => {
+    const next = [...cells]
+    ;[next[a], next[b]] = [next[b], next[a]]
+    setCells(next, b)
+  }
+
   const move = (delta: -1 | 1) => {
     if (selected === null) return
     const target = selected + delta
@@ -142,8 +153,8 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
 
   const applyToAll = () => {
     if (selected === null) return
-    const adj = cells[selected].adjustments
-    setCells(cells.map((c) => ({ ...c, adjustments: adj })))
+    const { adjustments, look } = cells[selected]
+    setCells(cells.map((c) => ({ ...c, adjustments, look })))
   }
 
   const runExport = async (opts: ExportOptions, mode: 'download' | 'share') => {
@@ -159,8 +170,8 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
       <TopBar onHome={onHome} history={history} onExport={() => setExporting(true)} />
 
       <main className="stage">
-        <CollageStage state={state} selected={selected} fontsReady={fontsReady} onSelect={selectCell} onPanCell={panCell} onZoomCell={zoomCell}
-          onTapBackground={tapBackground} />
+        <CollageStage state={state} selected={selected} fontsReady={fontsReady} layers={layers.gestures} onSelect={selectCell}
+          onPanCell={panCell} onZoomCell={zoomCell} onSwapCells={swap} onTapBackground={tapBackground} />
         {error && (
           <button type="button" className="toast" role="alert" onClick={() => setError(null)}>
             {error}
@@ -184,7 +195,11 @@ export function CollageEditor({ photos, fontsReady, onHome }: CollageEditorProps
                 onReplace={() => pick(selected)}
                 onRemove={remove}
                 onApplyToAll={applyToAll}
+                onAdd={() => pick(null)}
               />
+            )}
+            {tool === 'layers' && (
+              <LayersPanel layers={state.layers} selected={layers.selected} onChange={layers.change} onSelect={layers.select} />
             )}
           </div>
         </aside>

@@ -4,12 +4,14 @@ PWA para editar fotos y ponerles un marco estilo instantánea. Lee los metadatos
 
 ## Funciones
 
-- **Editar**: histograma RGB, estilos rápidos, luz (exposición, contraste, altas luces, sombras, blancos, negros), color (temperatura, matiz, intensidad, saturación), mezcla de color HSL por 8 tonos, efectos (claridad, desvanecido, viñeta, grano) y nitidez.
+- **Filtros**: 108 filtros con miniaturas sobre tu propia foto e intensidad ajustable: 54 inspirados en cámaras y películas (instantáneas, compactas, desechables, de juguete, telemétricas, medio formato, cine, diapositiva, negativo) y 54 creativos (incluidos 12 en blanco y negro).
+- **Textos y stickers**: capas que se mueven con un dedo y se agrandan o giran con dos; varios textos con letra, color y fondo, emojis o imágenes propias (PNG, JPG, WebP o el primer cuadro de un GIF).
+- **Editar**: histograma RGB, luz (exposición, contraste, altas luces, sombras, blancos, negros), color (temperatura, matiz, intensidad, saturación), mezcla de color HSL por 8 tonos, efectos (claridad, desvanecido, viñeta, grano), nitidez, virado de sombras y luces, y botón Auto.
 - **Recortar**: proporciones, girar, espejo, enderezar, acercar y encuadrar arrastrando la foto.
 - **Marco**: instantánea (Clásico, Panorámico, Mini), Franja y Galería (datos a izquierda y derecha), Desenfoque (fondo desenfocado de la propia foto, proporciones 1:1, 4:5, 9:16 y 16:9, borde y sombra), Sobre la foto y sin marco. Texto propio con tres tipos de letra.
 - **Datos impresos editables**: cámara, objetivo, exposición y fecha se llenan desde el EXIF y se pueden corregir o dejar vacíos.
 - **Datos**: EXIF completo, con ubicación GPS y enlace a OpenStreetMap.
-- **Collage** de hasta 9 fotos: distribuciones en filas y columnas según el número de fotos, proporciones 1:1, 4:5, 3:4, 9:16, 3:2 y 16:9, fondo de color, degradado o foto desenfocada, espaciado, margen, esquinas redondeadas y texto. Cada foto se encuadra arrastrándola, tiene zoom y ajustes propios, y se puede mover, reemplazar o quitar.
+- **Collage** de hasta 9 fotos: distribuciones en filas y columnas según el número de fotos, proporciones 1:1, 4:5, 3:4, 9:16, 3:2 y 16:9, fondo de color, degradado o foto desenfocada, espaciado, margen, esquinas redondeadas y texto. Cada foto se encuadra arrastrándola, se acerca pellizcando, tiene filtro y ajustes propios, y se intercambia con otra manteniéndola pulsada y soltándola encima. Desde el editor de una foto se pueden agregar más para pasar a collage.
 - **Interfaz tipo Lightroom**: barra de herramientas con iconos (abajo en el móvil, a la derecha en escritorio), paneles que se abren y se ocultan al tocar la herramienta, categorías Estilos, Luz, Color, Mezcla, Efectos y Detalle, y modo inmersivo al tocar la foto.
 - **10 tipos de letra incluidos en la app** (funcionan sin conexión): Limpia, A mano, Caligrafía, Marcador, Máquina, Antigua, Técnica, Clásica, Elegante y Titular, con letra independiente para los datos.
 - **Tono claro u oscuro**: claro por defecto; la elección se recuerda en el dispositivo.

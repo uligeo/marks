@@ -70,3 +70,11 @@ export const IconFill = () => (
 )
 export const IconStyle = () => <Icon><path d="M4 20h4L19 9a2.8 2.8 0 00-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></Icon>
 export const IconMoon = () => <Icon><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z" /></Icon>
+export const IconText = () => <Icon><path d="M5 6V4h14v2" /><path d="M12 4v16" /><path d="M9 20h6" /></Icon>
+export const IconAddPhotos = () => (
+  <Icon>
+    <rect x="3" y="7" width="14" height="14" rx="2" />
+    <path d="M7 3h12a2 2 0 012 2v12" />
+    <path d="M10 11v6M7 14h6" />
+  </Icon>
+)

@@ -1,0 +1,81 @@
+/* Filters */
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px 8px;
+}
+
+.filter-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.filter-option span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-thumb {
+  width: 100%;
+  max-width: 96px;
+  aspect-ratio: 1;
+  border-radius: var(--radius-s);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  background: var(--line);
+}
+
+.filter-option[aria-pressed='true'] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.filter-option[aria-pressed='true'] .filter-thumb {
+  outline-color: var(--accent);
+}
+
+/* Layers and stickers */
+
+.text-area {
+  min-height: 64px;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 1.35;
+}
+
+.sticker-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 4px;
+}
+
+.sticker-option {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.sticker-option:hover,
+.sticker-option:focus-visible {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}

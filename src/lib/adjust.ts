@@ -30,28 +30,21 @@ export function neutralAdjustments(): Adjustments {
     fade: 0,
     vignette: 0,
     grain: 0,
+    shadowHue: 0,
+    shadowAmount: 0,
+    highlightHue: 0,
+    highlightAmount: 0,
     hsl: Object.fromEntries(HSL_BANDS.map((b) => [b.id, zeroShift()])) as Record<HslBand, HslShift>,
   }
 }
 
-type ScalarKey = Exclude<keyof Adjustments, 'hsl'>
+/** Adjustment keys that are plain strengths (hues are angles and are not summed). */
+export type StrengthKey = Exclude<keyof Adjustments, 'hsl' | 'shadowHue' | 'highlightHue'>
 
-export const PRESETS: { name: string; values: Partial<Record<ScalarKey, number>> }[] = [
-  { name: 'Original', values: {} },
-  { name: 'Instantánea', values: { contrast: -0.1, highlights: -0.3, shadows: 0.2, saturation: -0.15, temperature: 0.25, fade: 0.35, vignette: 0.35, grain: 0.15 } },
-  { name: 'Verano', values: { exposure: 0.15, shadows: 0.25, vibrance: 0.35, temperature: 0.4, fade: 0.1 } },
-  { name: 'Fría', values: { contrast: 0.15, saturation: -0.1, temperature: -0.4, tint: -0.1, fade: 0.2 } },
-  { name: 'Blanco y negro', values: { contrast: 0.3, clarity: 0.25, saturation: -1, grain: 0.25, vignette: 0.25 } },
-  { name: 'Desvaída', values: { contrast: -0.3, saturation: -0.35, fade: 0.6, temperature: 0.1 } },
-  { name: 'Nítida', values: { clarity: 0.4, sharpness: 0.4, vibrance: 0.2, blacks: -0.15 } },
-]
-
-export function applyPreset(values: Partial<Record<ScalarKey, number>>): Adjustments {
-  return { ...neutralAdjustments(), ...values }
-}
+const HUE_KEYS = new Set(['shadowHue', 'highlightHue'])
 
 export function isNeutral(a: Adjustments): boolean {
-  const scalars = Object.entries(a).every(([k, v]) => k === 'hsl' || v === 0)
+  const scalars = Object.entries(a).every(([k, v]) => k === 'hsl' || HUE_KEYS.has(k) || v === 0)
   return scalars && !hslActive(a)
 }
 

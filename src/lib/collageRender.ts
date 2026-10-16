@@ -2,7 +2,9 @@ import type { CollageCell, CollageSettings, CollageState } from '../types'
 import { isNeutral } from './adjust'
 import { layoutRects, resolveLayout, type Rect } from './collageLayouts'
 import { drawBlurBackground } from './frame'
+import { mergeLook } from './filters'
 import { getFont } from './fonts'
+import { drawLayers, drawSelection, type LayerBox } from './layers'
 import { drawStack, inkFor } from './frameText'
 import { applyAdjustments } from './pipeline'
 import { blurredCopy } from './render'
@@ -36,6 +38,8 @@ export interface CollageGeometry {
   rects: Rect[]
   radius: number
   textBox: Rect | null
+  /** Layer boxes, filled in once the layers are drawn. */
+  boxes: LayerBox[]
 }
 
 export function collageGeometry(state: CollageState, longSide: number): CollageGeometry {
@@ -54,6 +58,7 @@ export function collageGeometry(state: CollageState, longSide: number): CollageG
     rects: layoutRects(layout, area, gap),
     radius: s.radius * short,
     textBox: band ? { x: margin, y: h - margin - band, w: w - margin * 2, h: band } : null,
+    boxes: [],
   }
 }
 
@@ -74,10 +79,11 @@ function renderCell(cell: CollageCell, w: number, h: number, full: boolean): HTM
   const x = -dw / 2 - (cell.panX * dw) / 2
   const y = -dh / 2 - (cell.panY * dh) / 2
   ctx.drawImage(src, x, y, c.width + dw, c.height + dh)
-  if (!isNeutral(cell.adjustments)) {
-    const blurred = cell.adjustments.clarity !== 0 ? blurredCopy(c) : null
+  const adj = mergeLook(cell.adjustments, cell.look)
+  if (!isNeutral(adj)) {
+    const blurred = adj.clarity !== 0 ? blurredCopy(c) : null
     const data = ctx.getImageData(0, 0, c.width, c.height)
-    applyAdjustments(data, cell.adjustments, blurred)
+    applyAdjustments(data, adj, blurred)
     ctx.putImageData(data, 0, 0)
   }
   return c
@@ -86,7 +92,7 @@ function renderCell(cell: CollageCell, w: number, h: number, full: boolean): HTM
 const cellCache = new Map<string, { key: string; canvas: HTMLCanvasElement }>()
 
 function cachedCell(cell: CollageCell, r: Rect): HTMLCanvasElement {
-  const key = `${cell.photo.file.name}|${Math.round(r.w)}x${Math.round(r.h)}|${cell.zoom}|${cell.panX}|${cell.panY}|${JSON.stringify(cell.adjustments)}`
+  const key = `${cell.photo.file.name}|${Math.round(r.w)}x${Math.round(r.h)}|${cell.zoom}|${cell.panX}|${cell.panY}|${JSON.stringify(cell.adjustments)}|${cell.look.id}:${cell.look.amount}`
   const hit = cellCache.get(cell.id)
   if (hit?.key === key) return hit.canvas
   const canvas = renderCell(cell, r.w, r.h, false)
@@ -142,11 +148,19 @@ function drawCollage(out: HTMLCanvasElement, state: CollageState, longSide: numb
     const font = getFont(s.font)
     drawStack(ctx, [{ text: s.caption.trim(), size, weight: font.bold, family: font.family, alpha: 1 }], geo.textBox, textColor(s))
   }
+  geo.boxes = drawLayers(ctx, state.layers, geo.w, geo.h)
   return geo
 }
 
-export function renderCollagePreview(out: HTMLCanvasElement, state: CollageState, selected: number | null): CollageGeometry {
+export function renderCollagePreview(
+  out: HTMLCanvasElement,
+  state: CollageState,
+  selected: number | null,
+  selectedLayer: string | null,
+): CollageGeometry {
   const geo = drawCollage(out, state, PREVIEW_LONG_SIDE, false)
+  const layerBox = geo.boxes.find((b) => b.id === selectedLayer)
+  if (layerBox) drawSelection(out.getContext('2d')!, layerBox, geo.w)
   const r = selected !== null ? geo.rects[selected] : undefined
   if (r) {
     const ctx = out.getContext('2d')!

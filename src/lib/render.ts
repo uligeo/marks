@@ -1,5 +1,7 @@
 import piexif from 'piexifjs'
-import type { Adjustments, ExifSummary, FrameSettings, LoadedPhoto, Transform } from '../types'
+import type { Adjustments, ExifSummary, FrameSettings, Layer, LoadedPhoto, Look, Transform } from '../types'
+import { mergeLook } from './filters'
+import { drawLayers, drawSelection, type LayerBox } from './layers'
 import { applyAdjustments, computeHistogram, type Histogram } from './pipeline'
 import { drawFrame, frameLayout } from './frame'
 import { dataUrlToBlob, readAsDataUrl } from './image'
@@ -106,13 +108,25 @@ export interface RenderInput {
   photo: LoadedPhoto
   transform: Transform
   adjustments: Adjustments
+  look: Look
   frame: FrameSettings
+  layers: Layer[]
 }
 
-export function renderPreview(out: HTMLCanvasElement, input: RenderInput): Histogram {
-  const { canvas, data } = renderPhoto(input.photo.preview, input.transform, input.adjustments, 1)
+export interface PreviewResult {
+  histogram: Histogram
+  boxes: LayerBox[]
+}
+
+export function renderPreview(out: HTMLCanvasElement, input: RenderInput, selectedLayer: string | null): PreviewResult {
+  const adj = mergeLook(input.adjustments, input.look)
+  const { canvas, data } = renderPhoto(input.photo.preview, input.transform, adj, 1)
   drawFrame(out, canvas, input.frame)
-  return computeHistogram(data)
+  const ctx = out.getContext('2d')!
+  const boxes = drawLayers(ctx, input.layers, out.width, out.height)
+  const selected = boxes.find((b) => b.id === selectedLayer)
+  if (selected) drawSelection(ctx, selected, out.width)
+  return { histogram: computeHistogram(data), boxes }
 }
 
 /** Output size at the photo's full native resolution, frame included. */
@@ -142,10 +156,12 @@ export async function exportImage(input: RenderInput, opts: ExportOptions): Prom
   const natural = naturalExportSize(input)
   const wanted = resolutionScale(natural, opts.resolution)
   const fit = fitScale(natural.w * wanted, natural.h * wanted)
-  const { canvas } = renderPhoto(input.photo.full, input.transform, input.adjustments, wanted * fit)
+  const adj = mergeLook(input.adjustments, input.look)
+  const { canvas } = renderPhoto(input.photo.full, input.transform, adj, wanted * fit)
   const out = document.createElement('canvas')
   drawFrame(out, canvas, input.frame)
   canvas.width = 0
+  drawLayers(out.getContext('2d')!, input.layers, out.width, out.height)
 
   const result = { size: { w: out.width, h: out.height }, limited: fit < 1 }
   const blob = await canvasToBlob(out, opts.format, JPEG_QUALITY[opts.quality])

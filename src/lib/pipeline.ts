@@ -43,6 +43,12 @@ function hue2rgb(p: number, q: number, t: number): number {
   return p
 }
 
+/** Fully saturated color for a hue, centered on gray so it can be added as a tint. */
+function tintOf(hue: number): [number, number, number] {
+  const h = (((hue % 360) + 360) % 360) / 360
+  return [hue2rgb(0, 1, h + 1 / 3) - 0.5, hue2rgb(0, 1, h) - 0.5, hue2rgb(0, 1, h - 1 / 3) - 0.5]
+}
+
 function luminanceOf(px: Uint8ClampedArray): Float32Array {
   const lum = new Float32Array(px.length / 4)
   for (let i = 0, j = 0; j < lum.length; i += 4, j++) {
@@ -66,6 +72,9 @@ export function applyAdjustments(data: ImageData, a: Adjustments, blurred: Image
   const lum0 = a.sharpness > 0 || (a.clarity !== 0 && blurred) ? luminanceOf(px) : null
   const blurLum = a.clarity !== 0 && blurred ? luminanceOf(blurred.data) : null
   const sat = 1 + a.saturation
+  const split = a.shadowAmount > 0 || a.highlightAmount > 0
+  const shTint = tintOf(a.shadowHue)
+  const hiTint = tintOf(a.highlightHue)
   const grainAmp = a.grain * 0.18
   const vig = a.vignette * 0.75
   const cx = width / 2
@@ -133,6 +142,14 @@ export function applyAdjustments(data: ImageData, a: Adjustments, blurred: Image
           g = hue2rgb(p, q, hn)
           b = hue2rgb(p, q, hn - 1 / 3)
         }
+      }
+      if (split) {
+        const lc = clamp01(0.299 * r + 0.587 * g + 0.114 * b)
+        const ws = (1 - lc) * (1 - lc) * a.shadowAmount * 0.4
+        const wh = lc * lc * a.highlightAmount * 0.4
+        r += shTint[0] * ws + hiTint[0] * wh
+        g += shTint[1] * ws + hiTint[1] * wh
+        b += shTint[2] * ws + hiTint[2] * wh
       }
       if (a.fade > 0) {
         r = a.fade * 0.16 + r * (1 - a.fade * 0.22)

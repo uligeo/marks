@@ -22,8 +22,46 @@ export interface Adjustments {
   fade: number
   vignette: number
   grain: number
+  /** Split toning: tint colors (hue in degrees) blended into shadows and highlights. */
+  shadowHue: number
+  shadowAmount: number
+  highlightHue: number
+  highlightAmount: number
   hsl: Record<HslBand, HslShift>
 }
+
+/** A filter applied on top of the manual adjustments, at a given strength (0..1). */
+export interface Look {
+  id: string | null
+  amount: number
+}
+
+interface LayerBase {
+  id: string
+  /** Center, as a fraction of the output width and height. */
+  x: number
+  y: number
+  /** Size as a fraction of the output width (font size for text, width for images). */
+  size: number
+  /** Radians. */
+  rotation: number
+}
+
+export interface TextLayer extends LayerBase {
+  kind: 'text'
+  text: string
+  font: string
+  color: string
+  background: 'none' | 'solid' | 'shadow'
+}
+
+export interface StickerLayer extends LayerBase {
+  kind: 'sticker'
+  emoji?: string
+  image?: ImageBitmap
+}
+
+export type Layer = TextLayer | StickerLayer
 
 export interface Transform {
   rotation: 0 | 90 | 180 | 270
@@ -86,6 +124,7 @@ export interface CollageCell {
   id: string
   photo: LoadedPhoto
   adjustments: Adjustments
+  look: Look
   zoom: number
   panX: number
   panY: number
@@ -112,4 +151,5 @@ export interface CollageSettings {
 export interface CollageState {
   cells: CollageCell[]
   settings: CollageSettings
+  layers: Layer[]
 }

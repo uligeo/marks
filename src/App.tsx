@@ -20,6 +20,8 @@ export default function App() {
   const [dragOver, setDragOver] = useState(false)
   const [fontsReady, setFontsReady] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  /** Photo that new picks are added to, turning the single-photo editor into a collage. */
+  const collageBase = useRef<LoadedPhoto | null>(null)
 
   useEffect(() => {
     loadCanvasFonts().then(() => setFontsReady(true))
@@ -42,9 +44,11 @@ export default function App() {
       setError('Este navegador no puede abrir esa imagen. Si es HEIC, conviértela a JPG o usa Safari.')
       return
     }
-    setMode(photos.length === 1 && images.length === 1 && !fileInput.current?.multiple
-      ? { kind: 'photo', photo: photos[0], key: Date.now() }
-      : { kind: 'collage', photos })
+    const base = collageBase.current
+    collageBase.current = null
+    if (base) setMode({ kind: 'collage', photos: [base, ...photos].slice(0, MAX_PHOTOS) })
+    else if (photos.length === 1 && images.length === 1 && !fileInput.current?.multiple) setMode({ kind: 'photo', photo: photos[0], key: Date.now() })
+    else setMode({ kind: 'collage', photos })
   }
 
   const pick = (multiple: boolean) => {
@@ -86,7 +90,11 @@ export default function App() {
         </>
       )}
       {mode.kind === 'photo' && (
-        <PhotoEditor key={mode.key} photo={mode.photo} fontsReady={fontsReady} onHome={goHome} onOpenAnother={() => pick(false)} />
+        <PhotoEditor key={mode.key} photo={mode.photo} fontsReady={fontsReady} onHome={goHome} onOpenAnother={() => pick(false)}
+          onAddPhotos={() => {
+            collageBase.current = mode.photo
+            pick(true)
+          }} />
       )}
       {mode.kind === 'collage' && <CollageEditor photos={mode.photos} fontsReady={fontsReady} onHome={goHome} />}
 

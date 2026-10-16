@@ -1,22 +1,34 @@
 import { useState, type ReactNode } from 'react'
 import type { Adjustments, HslBand, HslShift } from '../types'
-import { HSL_BANDS, PRESETS, applyPreset } from '../lib/adjust'
+import { HSL_BANDS } from '../lib/adjust'
 import type { Histogram as HistogramData } from '../lib/pipeline'
 import { Histogram } from './Histogram'
 import { Slider } from './Slider'
-import { IconColor, IconDetail, IconEffects, IconLight, IconMix, IconPresets } from './icons'
+import { IconColor, IconDetail, IconEffects, IconLight, IconMix } from './icons'
 
 interface AdjustPanelProps {
   value: Adjustments
   histogram: HistogramData | null
   onChange: (value: Adjustments) => void
+  /** Automatic exposure and tone correction; hidden when not provided. */
+  onAuto?: () => void
 }
 
 type ScalarKey = Exclude<keyof Adjustments, 'hsl'>
-type SectionId = 'presets' | 'light' | 'color' | 'mix' | 'effects' | 'detail'
+type SectionId = 'light' | 'color' | 'mix' | 'effects' | 'detail'
+
+interface SliderSpec {
+  key: ScalarKey
+  label: string
+  min: number
+  max?: number
+  step?: number
+  format?: (v: number) => string
+}
+
+const degrees = (v: number): string => `${Math.round(v)}°`
 
 const SECTIONS: { id: SectionId; label: string; icon: ReactNode }[] = [
-  { id: 'presets', label: 'Estilos', icon: <IconPresets /> },
   { id: 'light', label: 'Luz', icon: <IconLight /> },
   { id: 'color', label: 'Color', icon: <IconColor /> },
   { id: 'mix', label: 'Mezcla', icon: <IconMix /> },
@@ -24,7 +36,7 @@ const SECTIONS: { id: SectionId; label: string; icon: ReactNode }[] = [
   { id: 'detail', label: 'Detalle', icon: <IconDetail /> },
 ]
 
-const SLIDERS: Partial<Record<SectionId, { key: ScalarKey; label: string; min: number }[]>> = {
+const SLIDERS: Partial<Record<SectionId, SliderSpec[]>> = {
   light: [
     { key: 'exposure', label: 'Exposición', min: -1 },
     { key: 'contrast', label: 'Contraste', min: -1 },
@@ -38,6 +50,10 @@ const SLIDERS: Partial<Record<SectionId, { key: ScalarKey; label: string; min: n
     { key: 'tint', label: 'Matiz', min: -1 },
     { key: 'vibrance', label: 'Intensidad', min: -1 },
     { key: 'saturation', label: 'Saturación', min: -1 },
+    { key: 'shadowHue', label: 'Virado de sombras: tono', min: 0, max: 360, step: 1, format: degrees },
+    { key: 'shadowAmount', label: 'Virado de sombras: intensidad', min: 0 },
+    { key: 'highlightHue', label: 'Virado de luces: tono', min: 0, max: 360, step: 1, format: degrees },
+    { key: 'highlightAmount', label: 'Virado de luces: intensidad', min: 0 },
   ],
   effects: [
     { key: 'clarity', label: 'Claridad', min: -1 },
@@ -77,7 +93,7 @@ function HslMixer({ value, onChange }: Omit<AdjustPanelProps, 'histogram'>) {
   )
 }
 
-export function AdjustPanel({ value, histogram, onChange }: AdjustPanelProps) {
+export function AdjustPanel({ value, histogram, onChange, onAuto }: AdjustPanelProps) {
   const [section, setSection] = useState<SectionId>('light')
   const sliders = SLIDERS[section]
 
@@ -95,14 +111,8 @@ export function AdjustPanel({ value, histogram, onChange }: AdjustPanelProps) {
         <div className="hide-mobile">
           <Histogram data={histogram} />
         </div>
-        {section === 'presets' && (
-          <div className="preset-grid">
-            {PRESETS.map((p) => (
-              <button key={p.name} type="button" className="chip" onClick={() => onChange(applyPreset(p.values))}>
-                {p.name}
-              </button>
-            ))}
-          </div>
+        {onAuto && section === 'light' && (
+          <button type="button" className="btn" onClick={onAuto}>Auto: corregir luz automáticamente</button>
         )}
         {section === 'mix' && <HslMixer value={value} onChange={onChange} />}
         {sliders?.map((s) => (
@@ -110,7 +120,9 @@ export function AdjustPanel({ value, histogram, onChange }: AdjustPanelProps) {
             key={s.key}
             label={s.label}
             min={s.min}
-            max={1}
+            max={s.max ?? 1}
+            step={s.step}
+            format={s.format}
             value={value[s.key]}
             onChange={(v) => onChange({ ...value, [s.key]: v })}
           />

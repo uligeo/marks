@@ -178,7 +178,8 @@
   top: 0;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 2px;
   margin: 0 -16px;
   padding: 6px 8px;
