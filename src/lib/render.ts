@@ -42,10 +42,15 @@ function straightenScale(c: CropRect, angle: number): number {
   return Math.max(1, (c.w * cos + c.h * sin) / roomX, (c.w * sin + c.h * cos) / roomY)
 }
 
-export function blurredCopy(canvas: HTMLCanvasElement): ImageData {
+/**
+ * Heavily blurred copy used by clarity. The blur radius is 1/32 of the whole photo's width,
+ * given in canvas pixels, so a crop and the uncropped photo get the same look.
+ */
+export function blurredCopy(canvas: HTMLCanvasElement, photoWidth = canvas.width): ImageData {
+  const k = Math.max(1, photoWidth / 32)
   const small = document.createElement('canvas')
-  small.width = Math.max(1, Math.round(canvas.width / 32))
-  small.height = Math.max(1, Math.round(canvas.height / 32))
+  small.width = Math.max(1, Math.round(canvas.width / k))
+  small.height = Math.max(1, Math.round(canvas.height / k))
   const sctx = small.getContext('2d')!
   sctx.imageSmoothingQuality = 'high'
   sctx.drawImage(canvas, 0, 0, small.width, small.height)
@@ -58,12 +63,94 @@ export function blurredCopy(canvas: HTMLCanvasElement): ImageData {
   return bctx.getImageData(0, 0, big.width, big.height)
 }
 
-interface PhotoResult {
-  canvas: HTMLCanvasElement
-  data: ImageData
+/** Applies every adjustment except the vignette, which depends on the crop. */
+function develop(canvas: HTMLCanvasElement, adj: Adjustments, photoWidth: number): ImageData {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const tone = { ...adj, vignette: 0 }
+  applyAdjustments(data, tone, tone.clarity !== 0 ? blurredCopy(canvas, photoWidth) : null)
+  ctx.putImageData(data, 0, 0)
+  return data
 }
 
-function renderPhoto(src: ImageBitmap, t: Transform, adj: Adjustments, scale: number): PhotoResult {
+/** Same falloff as a per-pixel vignette, drawn as a radial gradient so it costs almost nothing. */
+function drawVignette(ctx: CanvasRenderingContext2D, w: number, h: number, amount: number): void {
+  if (amount <= 0) return
+  const strength = amount * 0.75
+  const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.hypot(w, h) / 2)
+  for (let i = 0; i <= 20; i++) {
+    const r = i / 20
+    const t = r * r < 0.25 ? 0 : (r * r - 0.25) / 0.75
+    g.addColorStop(r, `rgba(0, 0, 0, ${strength * t * t * (3 - 2 * t)})`)
+  }
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, w, h)
+}
+
+/** The rotated and mirrored photo at `scale`, before any crop. */
+function orientedCanvas(src: ImageBitmap, t: Transform, scale: number): HTMLCanvasElement {
+  const { w, h } = orientedSize(src, t.rotation)
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(w * scale))
+  canvas.height = Math.max(1, Math.round(h * scale))
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+  ctx.imageSmoothingQuality = 'high'
+  ctx.translate(canvas.width / 2, canvas.height / 2)
+  ctx.rotate((t.rotation * Math.PI) / 180)
+  if (t.flipH) ctx.scale(-1, 1)
+  ctx.drawImage(src, (-src.width * scale) / 2, (-src.height * scale) / 2, src.width * scale, src.height * scale)
+  return canvas
+}
+
+/** Draws the crop (with straightening) of an already oriented image into a new canvas. */
+function composeCrop(oriented: HTMLCanvasElement, c: CropRect, t: Transform, scale: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(c.w * scale))
+  canvas.height = Math.max(1, Math.round(c.h * scale))
+  const ctx = canvas.getContext('2d')!
+  ctx.imageSmoothingQuality = 'high'
+  const angle = (t.straighten * Math.PI) / 180
+  const k = straightenScale(c, angle)
+  const ccx = c.x + c.w / 2
+  const ccy = c.y + c.h / 2
+  ctx.scale(scale, scale)
+  ctx.translate(-c.x, -c.y)
+  ctx.translate(ccx, ccy)
+  ctx.rotate(angle)
+  ctx.scale(k, k)
+  ctx.translate(-ccx, -ccy)
+  ctx.drawImage(oriented, 0, 0, c.orientedW, c.orientedH)
+  return canvas
+}
+
+interface Developed {
+  key: string
+  canvas: HTMLCanvasElement
+  histogram: Histogram
+}
+
+/** One developed preview per photo: reused while only the crop, frame or layers change. */
+const developedCache = new WeakMap<ImageBitmap, Developed>()
+/** Half-resolution develop used while a control is being dragged. */
+const draftCache = new WeakMap<ImageBitmap, Developed>()
+const DRAFT_SCALE = 0.5
+
+function developedPreview(src: ImageBitmap, t: Transform, adj: Adjustments, draft: boolean): Developed {
+  const key = `${t.rotation}|${t.flipH}|${JSON.stringify({ ...adj, vignette: 0 })}`
+  const full = developedCache.get(src)
+  if (full?.key === key) return full
+  const cache = draft ? draftCache : developedCache
+  const hit = cache.get(src)
+  if (hit?.key === key) return hit
+  const canvas = orientedCanvas(src, t, draft ? DRAFT_SCALE : 1)
+  const data = develop(canvas, adj, canvas.width)
+  const result = { key, canvas, histogram: computeHistogram(data) }
+  cache.set(src, result)
+  return result
+}
+
+/** Full-quality render for export: crop first so only the kept pixels are processed. */
+function renderPhoto(src: ImageBitmap, t: Transform, adj: Adjustments, scale: number): HTMLCanvasElement {
   const c = cropRect(src, t)
   const canvas = document.createElement('canvas')
   canvas.width = Math.max(1, Math.round(c.w * scale))
@@ -86,11 +173,9 @@ function renderPhoto(src: ImageBitmap, t: Transform, adj: Adjustments, scale: nu
   ctx.drawImage(src, -src.width / 2, -src.height / 2)
   ctx.setTransform(1, 0, 0, 1, 0, 0)
 
-  const blurred = adj.clarity !== 0 ? blurredCopy(canvas) : null
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  applyAdjustments(data, adj, blurred)
-  ctx.putImageData(data, 0, 0)
-  return { canvas, data }
+  develop(canvas, adj, c.orientedW * scale)
+  drawVignette(ctx, canvas.width, canvas.height, adj.vignette)
+  return canvas
 }
 
 export interface RenderInput {
@@ -107,15 +192,19 @@ export interface PreviewResult {
   boxes: LayerBox[]
 }
 
-export function renderPreview(out: HTMLCanvasElement, input: RenderInput, selectedLayer: string | null): PreviewResult {
+/** `draft` trades resolution for speed while the user is still dragging a control. */
+export function renderPreview(out: HTMLCanvasElement, input: RenderInput, selectedLayer: string | null, draft = false): PreviewResult {
   const adj = mergeLook(input.adjustments, input.look)
-  const { canvas, data } = renderPhoto(input.photo.preview, input.transform, adj, 1)
+  const src = input.photo.preview
+  const developed = developedPreview(src, input.transform, adj, draft)
+  const canvas = composeCrop(developed.canvas, cropRect(src, input.transform), input.transform, 1)
+  drawVignette(canvas.getContext('2d')!, canvas.width, canvas.height, adj.vignette)
   drawFrame(out, canvas, input.frame)
   const ctx = out.getContext('2d')!
   const boxes = drawLayers(ctx, input.layers, out.width, out.height)
   const selected = boxes.find((b) => b.id === selectedLayer)
   if (selected) drawSelection(ctx, selected, out.width)
-  return { histogram: computeHistogram(data), boxes }
+  return { histogram: developed.histogram, boxes }
 }
 
 /** Output size at the photo's full native resolution, frame included. */
@@ -146,7 +235,7 @@ export async function exportImage(input: RenderInput, opts: ExportOptions): Prom
   const wanted = resolutionScale(natural, opts.resolution)
   const fit = fitScale(natural.w * wanted, natural.h * wanted)
   const adj = mergeLook(input.adjustments, input.look)
-  const { canvas } = renderPhoto(input.photo.full, input.transform, adj, wanted * fit)
+  const canvas = renderPhoto(input.photo.full, input.transform, adj, wanted * fit)
   const out = document.createElement('canvas')
   drawFrame(out, canvas, input.frame)
   canvas.width = 0

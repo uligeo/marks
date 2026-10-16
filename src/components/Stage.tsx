@@ -24,19 +24,31 @@ interface StageProps {
   onTap: () => void
 }
 
+const DRAFT_WINDOW_MS = 220
+
 export function Stage({ input, fontsReady, layers, onHistogram, onPan, onZoom, onTap }: StageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const boxes = useRef<LayerBox[]>([])
   const target = useRef<string | null>(null)
+  const lastRender = useRef(0)
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => {
+    const draw = (draft: boolean) => {
       if (!canvasRef.current) return
-      const result = renderPreview(canvasRef.current, input, layers.selected)
+      const result = renderPreview(canvasRef.current, input, layers.selected, draft)
       boxes.current = result.boxes
       onHistogram(result.histogram)
-    })
-    return () => cancelAnimationFrame(id)
+    }
+    // Rapid successive changes (a slider being dragged) render a fast draft, then the full preview once they stop.
+    const now = performance.now()
+    const draft = now - lastRender.current < DRAFT_WINDOW_MS
+    lastRender.current = now
+    const frame = requestAnimationFrame(() => draw(draft))
+    const settle = draft ? window.setTimeout(() => draw(false), DRAFT_WINDOW_MS) : 0
+    return () => {
+      cancelAnimationFrame(frame)
+      clearTimeout(settle)
+    }
   }, [input, fontsReady, onHistogram, layers.selected])
 
   const gestures = useGestures({
